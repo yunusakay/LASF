@@ -18,3 +18,6 @@ Bitkileri tüketimlerine göre sınıflandırıf everimlerini kontrol etmek.
 NEDEN UZAY TARIMCILIK?
 İnsan bitkilerde evrimleştiği için onlara zihinsel ve biyolojik olarak ihtiyaç duymaktadır.
 Uzay da bizim için çoğunlukla her zaman araştıramadığımız bir araştırma ortamı. Dolayısıyla bu fazla mesaide yiyecek üretmek ve onlarla ruh sağlığına dikkat etmek iyi bir şey.
+
+EKOSISTEM
+Patates, marul, cilek.
