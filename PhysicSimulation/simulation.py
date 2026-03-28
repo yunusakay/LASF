@@ -96,10 +96,8 @@ async def physics_loop():
 
 # Limitler
         state["ph"] = max(0.0, min(14.0, state["ph"]))
-        state["chamber_humidity"] = max(0.0, min(100.0, state["chamber_humidity"]))
-        
-        current_row_index += 1
-        await asyncio.sleep(1)
+        state["chamber_humidity"] = max(0.0, min(100.0, state["chamber_humidity"])) 
+    
         
         current_row_index += 1
         await asyncio.sleep(1)
