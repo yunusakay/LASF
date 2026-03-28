@@ -24,24 +24,22 @@ function logTerminal(msg, type = 'normal') {
     const time = new Date().toLocaleTimeString();
     let color = type === 'warn' ? 'log-warn' : (type === 'crit' ? 'log-crit' : '');
     term.innerHTML += `<div class="${color}">> [${time}] ${msg}</div>`;
-    term.scrollTop = term.scrollHeight; // Otomatik aşağı kaydır
+    term.scrollTop = term.scrollHeight; 
 }
 
-// 2. PYTHON API ENTEGRASYONU (WebSocket Yerine Doğrudan Veri Çekimi)
+// 2. PYTHON API ENTEGRASYONU (localhost yerine 127.0.0.1 kullanıldı)
 async function fetchHydroData() {
     try {
-        const response = await fetch('http://localhost:8000/api/sensors');
+        const response = await fetch('http://127.0.0.1:8000/api/sensors');
         if (!response.ok) throw new Error('API Hatası');
         let simData = await response.json(); 
         
         document.getElementById('connection-status').textContent = `Uzay Saati: ${simData.current_time} | Python NPK Motoruna Bağlı`;
         document.getElementById('connection-status').className = "status-online";
 
-        // HTML içindeki ID'leri güncelliyoruz
+        // Değerleri Ekrana Yazdır
         document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
         document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
-        
-        // NPK ve AI Eşleştirmesi (Gübre ve Bitki Önerisi)
         document.getElementById('val-n').textContent = simData.mineral_n.toFixed(0);
         document.getElementById('val-p').textContent = simData.mineral_p.toFixed(0);
         document.getElementById('val-k').textContent = simData.mineral_k.toFixed(0);
@@ -66,10 +64,10 @@ async function fetchHydroData() {
     }
 }
 
-// 3. JÜRİ İÇİN MANUEL TEST BUTONLARI (Python'a POST Gönderir)
+// 3. MANUEL TEST BUTONLARI
 async function toggleDevice(deviceName, actionState) {
     try {
-        await fetch("http://localhost:8000/api/device", {
+        await fetch("http://127.0.0.1:8000/api/device", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ device: deviceName, action: actionState })
@@ -77,24 +75,9 @@ async function toggleDevice(deviceName, actionState) {
 
         logTerminal(`MANUEL MÜDAHALE: ${deviceName} durumu ${actionState ? 'AÇIK' : 'KAPALI'} yapıldı.`, actionState ? "warn" : "normal");
 
-        // UI Rozetlerini (Badge) Güncelle
-        let badgeId = "";
-        if(deviceName === "ventilation_fan") badgeId = "status-fan";
-        if(deviceName === "dehumidifier") badgeId = "status-dehumidifier";
-        if(deviceName === "npk_doser") badgeId = "status-npk";
-        
-        if(badgeId) {
-            const badge = document.getElementById(badgeId);
-            if(badge) {
-                badge.className = actionState ? "badge badge-active" : "badge badge-standby";
-                badge.innerText = actionState ? "AKTİF" : "BEKLEMEDE";
-            }
-        }
-
     } catch (error) {
-        logTerminal("HATA: Python sunucusuna ulaşılamıyor! (Manuel Komut İletilemedi)", "crit");
+        logTerminal("HATA: Python sunucusuna ulaşılamıyor!", "crit");
     }
 }
 
-// Otonom olarak her saniye API'den veriyi çek
 setInterval(fetchHydroData, 1000);
