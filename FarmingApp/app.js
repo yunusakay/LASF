@@ -5,15 +5,15 @@ const hydroChart = new Chart(ctx, {
     data: {
         labels: [],
         datasets: [
-            { label: 'Su Sıcaklığı (°C)', borderColor: '#f87171', data: [], tension: 0.4 },
-            { label: 'pH Seviyesi', borderColor: '#a78bfa', data: [], tension: 0.4, yAxisID: 'y1' }
+            { label: 'Kabin Sıcaklığı (°C)', borderColor: '#f87171', data: [], tension: 0.4 },
+            { label: 'Kabin Nemi (%)', borderColor: '#38bdf8', data: [], tension: 0.4, yAxisID: 'y1' }
         ]
     },
     options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         scales: {
             y: { type: 'linear', display: true, position: 'left', min: 18, max: 28, title: { display: true, text: 'Sıcaklık (°C)' } },
-            y1: { type: 'linear', display: true, position: 'right', min: 4, max: 9, title: { display: true, text: 'pH' } }
+            y1: { type: 'linear', display: true, position: 'right', min: 30, max: 90, title: { display: true, text: 'Nem (%)' } }
         },
         plugins: { legend: { labels: { color: '#f8fafc' } } }
     }
@@ -27,7 +27,10 @@ function logTerminal(msg, type = 'normal') {
     term.scrollTop = term.scrollHeight;
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6099b589da4d9e4464f45746d20b160bd21d5ebf
 // 2. NODE-RED WEBSOCKET BAĞLANTISI (Ana Veri Akışı)
 const ws = new WebSocket('ws://localhost:1880/ws/telemetry');
 
@@ -75,8 +78,9 @@ ws.onmessage = function (event) {
 
     if (hydroChart.data.labels.length > 20) {
         hydroChart.data.labels.shift();
-        hydroChart.data.datasets[0].data.shift();
-        hydroChart.data.datasets[1].data.shift();
+        hydroChart.data.datasets.forEach(dataset => {
+            dataset.data.shift();
+        });
     }
     hydroChart.update();
 };
@@ -105,6 +109,7 @@ function toggleDevice(deviceName, actionState) {
         badge.innerText = "BEKLEMEDE";
     }
 }
+<<<<<<< HEAD
 async function fetchHydroData() {
     try {
         // Python API'sinden Gerçek Veriyi Çekiyoruz!
@@ -176,3 +181,5 @@ setInterval(() => {
         }
     }
 }, 3000); // 3 saniyede bir terminale yazı düşer
+=======
+>>>>>>> 6099b589da4d9e4464f45746d20b160bd21d5ebf
