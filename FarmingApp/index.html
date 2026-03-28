@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KOTA - Uzay Tarımı Yaşam Destek</title>
+    <title>KOTA - NPK Akıllı Uzay Tarımı</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <header>
             <div>
-                <h1>KOTA - Aeroponik Uzay Kabini</h1>
+                <h1>KOTA - NPK Akıllı Uzay Kabini</h1>
                 <p style="color: #94a3b8; margin-top: 5px;">SITL Fizik Motoru ve NASA Telemetrisi</p>
             </div>
-            <div id="connection-status" class="status-offline">Sunucu Aranıyor...</div>
+            <div id="connection-status" class="status-offline">Node-RED Bekleniyor...</div>
         </header>
 
         <div class="kpi-grid">
@@ -28,16 +31,12 @@
                 <p id="val-hum" style="color: #38bdf8;">-- %</p>
             </div>
             <div class="card">
-                <h3>NPK Mineral Durumu</h3>
-                <p style="font-size: 16px; margin-top: 10px;">
-                    <span style="color: #38bdf8;">N: <span id="val-n">--</span></span> | 
-                    <span style="color: #f87171;">P: <span id="val-p">--</span></span> | 
-                    <span style="color: #fbbf24;">K: <span id="val-k">--</span></span>
-                </p>
+                <h3>Su Tankı</h3>
+                <p id="val-water" style="color: #4ade80;">-- L</p>
             </div>
-            <div class="card" style="border: 1px solid #a78bfa; background: #1e1b4b;">
-                <h3 style="color: #a78bfa;">🤖 AI Ekim Önerisi</h3>
-                <p id="val-ai" style="color: #4ade80; font-size: 18px; margin-top: 10px;">Analiz Ediliyor...</p>
+            <div class="card">
+                <h3>NPK Değerleri</h3>
+                <p id="val-npk" style="color: #fbbf24; font-size: 32px; text-shadow: 0 0 15px #fbbf24;">--</p>
             </div>
         </div>
 
@@ -47,41 +46,61 @@
             </div>
 
             <div class="hardware-box">
-                <h3 style="border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px;">IoT Aktüatör Durumları</h3>
+                <h3 style="border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px;">Aktivasyon
+                    Paneli</h3>
                 <ul class="system-list">
-                    <li>Aeroponik Su Pompası: <span id="status-pump" class="badge badge-standby">BEKLEMEDE</span></li>
                     <li>Havalandırma Fanı: <span id="status-fan" class="badge badge-standby">BEKLEMEDE</span></li>
-                    <li>Aerogel Su Hasatlayıcı: <span id="status-aerogel" class="badge badge-standby">BEKLEMEDE</span></li>
+                    <li>Nem Toplayıcı (Dehumidifier): <span id="status-dehumidifier"
+                            class="badge badge-standby">BEKLEMEDE</span></li>
+                    <li>Su Soğutucu (Chiller): <span id="status-chiller" class="badge badge-standby">BEKLEMEDE</span>
+                    </li>
+                    <li>pH Düzenleyici: <span id="status-ph" class="badge badge-standby">BEKLEMEDE</span></li>
+                    <li>NPK Gübre Dozlayıcı: <span id="status-npk" class="badge badge-standby">BEKLEMEDE</span></li>
                 </ul>
                 <div class="terminal" id="terminal">
-                    <div style="color: #4ade80;">> Uzay simülasyonu bağlantısı bekleniyor...</div>
+                    <div style="color: #4ade80;">> Sistem başlatıldı. NPK Analiz Motoru devrede.</div>
                 </div>
             </div>
         </div>
+
+        <div class="bottom-grid">
+
+            <div class="card override-panel">
+                <h3>⚠️ Manuel Sistem Testi (Jüri Şovu)</h3>
+                <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">Cihazları manuel olarak tetikleyin</p>
+                <div class="btn-group">
+                    <button onclick="toggleDevice('dehumidifier', true)" class="btn-warning">💧 Nem Toplayıcıyı
+                        Aç</button>
+                    <button onclick="toggleDevice('ventilation_fan', true)" class="btn-danger">💨 Fanı Aç
+                        (Soğut)</button>
+                    <button onclick="toggleDevice('npk_doser', true)"
+                        style="background:rgba(251, 191, 36, 0.2); color:#fbbf24; border: 1px solid #f59e0b;"
+                        class="btn">🧪 NPK Gübre Sık</button>
+                    <button
+                        onclick="toggleDevice('dehumidifier', false); toggleDevice('ventilation_fan', false); toggleDevice('npk_doser', false)"
+                        style="background:#334155; color:white; margin-top:5px; border:none;" class="btn">Sistemi
+                        Otonoma Bırak</button>
+                </div>
+            </div>
+
+            <div class="card mission-panel">
+                <h3>🚀 Görev ve Yapay Zeka</h3>
+                <div class="stat-row">
+                    <span>NASA Zamanı:</span>
+                    <strong id="nasa-time">Yükleniyor...</strong>
+                </div>
+                <div class="stat-row" style="flex-direction: column; align-items: flex-start; margin-top: 15px;">
+                    <span style="margin-bottom: 5px; color:#94a3b8;">Yapay Zeka Önerisi:</span>
+                    <strong id="ai-status"
+                        style="color: #a78bfa; text-shadow: 0 0 10px #a78bfa; font-size: 18px;">Analiz
+                        Bekleniyor...</strong>
+                </div>
+            </div>
+
+        </div>
     </div>
 
-    <div class="bottom-grid">
-        <div class="card override-panel">
-            <h3>⚠️ Manuel Sistem Testi (Jüri Şovu)</h3>
-            <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">Cihazları manuel olarak tetikleyin</p>
-            <div class="btn-group">
-                <button onclick="toggleDevice('aerogel_collector', true)" class="btn-warning">💧 Aerogel'i Aç (Suyu Koru)</button>
-                <button onclick="toggleDevice('ventilation_fan', true)" class="btn-danger">💨 Fanı Aç (Soğut)</button>
-                <button onclick="toggleDevice('aerogel_collector', false); toggleDevice('ventilation_fan', false)" style="background:#334155; color:white;" class="btn">Sistemi Otonoma Bırak</button>
-            </div>
-        </div>
-        <div class="card mission-panel">
-            <h3>🚀 Görev İlerleyişi</h3>
-            <div class="stat-row">
-                <span>NASA Zamanı:</span>
-                <strong id="nasa-time">Yükleniyor...</strong>
-            </div>
-            <div class="stat-row">
-                <span>Sistem Durumu:</span>
-                <strong id="sys-status" style="color: #4ade80;">AKTİF</strong>
-            </div>
-        </div>
-    </div>
     <script src="app.js"></script>
 </body>
+
 </html>
