@@ -28,6 +28,7 @@ function logTerminal(msg, type = 'normal') {
 }
 
 // 2. PYTHON API ENTEGRASYONU (WebSocket Yerine Doğrudan Veri Çekimi)
+// 2. PYTHON API ENTEGRASYONU (Doğrudan Veri Çekimi)
 async function fetchHydroData() {
     try {
         const response = await fetch('http://localhost:8000/api/sensors');
@@ -37,15 +38,16 @@ async function fetchHydroData() {
         document.getElementById('connection-status').textContent = `Uzay Saati: ${simData.current_time} | Python NPK Motoruna Bağlı`;
         document.getElementById('connection-status').className = "status-online";
 
-        // HTML içindeki ID'leri güncelliyoruz
+        // HTML içindeki DOĞRU ID'leri güncelliyoruz
         document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
         document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
+        document.getElementById('val-water').textContent = simData.water_tank_liters.toFixed(1) + " L";
         
-        // NPK ve AI Eşleştirmesi (Gübre ve Bitki Önerisi)
-        document.getElementById('val-n').textContent = simData.mineral_n.toFixed(0);
-        document.getElementById('val-p').textContent = simData.mineral_p.toFixed(0);
-        document.getElementById('val-k').textContent = simData.mineral_k.toFixed(0);
-        document.getElementById('val-ai').textContent = simData.ai_recommendation;
+        // NPK Değerlerini TEK BİR ID'de birleştirip basıyoruz
+        document.getElementById('val-npk').textContent = `N:${simData.mineral_n.toFixed(0)} P:${simData.mineral_p.toFixed(0)} K:${simData.mineral_k.toFixed(0)}`;
+        
+        // Yapay Zeka ID'si doğru şekilde (ai-status) olarak güncellendi
+        document.getElementById('ai-status').textContent = simData.ai_recommendation;
 
         // Grafiği Güncelle
         const now = new Date().toLocaleTimeString();
@@ -61,6 +63,8 @@ async function fetchHydroData() {
         hydroChart.update();
 
     } catch (error) {
+        // Hata ayıklama için hatayı tarayıcı konsoluna (F12) yazdır
+        console.error("Veri çekme hatası: ", error); 
         document.getElementById('connection-status').textContent = "Python Sunucusu Bekleniyor...";
         document.getElementById('connection-status').className = "status-offline";
     }
