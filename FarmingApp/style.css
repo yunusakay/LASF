@@ -1,0 +1,193 @@
+/* styles.css */
+body {
+    background-color: #0d1117; /* Space dark background */
+    color: #c9d1d9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+.header { 
+    text-align: center; 
+    border-bottom: 1px solid #30363d; 
+    padding-bottom: 10px; 
+    margin-bottom: 20px;
+}
+
+.header h1 { 
+    color: #58a6ff; 
+    margin: 0; 
+    text-transform: uppercase; 
+    letter-spacing: 2px;
+}
+
+/* KPI Cards */
+.kpi-container { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 20px; 
+    gap: 20px;
+}
+
+.kpi-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.kpi-title { 
+    font-size: 14px; 
+    color: #8b949e; 
+    text-transform: uppercase;
+}
+
+.kpi-value { 
+    font-size: 36px; 
+    font-weight: bold; 
+    margin-top: 10px; 
+    color: #3fb950; 
+    transition: color 0.3s;
+}
+
+/* Ana taşıyıcı kutu */
+.main-content { 
+    display: flex; 
+    gap: 20px; 
+    align-items: stretch; /* Kutuların boylarını eşitler */
+}
+
+/* 2. ORTA PANEL: Grafik */
+.chart-container { 
+    flex: 2; /* En çok alanı grafik alsın */
+    min-width: 0; /* ÇOK ÖNEMLİ: Chart.js'in flex içinde bozulmadan yeniden boyutlanmasını sağlar */
+    background: #161b22; 
+    padding: 20px; 
+    border-radius: 8px; 
+    border: 1px solid #30363d;
+}
+
+.terminal-container { 
+    flex: 1; 
+    min-width: 250px; /* Terminalin aşırı ezilip kelimelerin alt alta düşmesini engeller */
+    background: #000; 
+    padding: 20px; 
+    border-radius: 8px; 
+    border: 1px solid #30363d; 
+    font-family: monospace; 
+    overflow-y: auto; 
+    height: 350px;
+}
+
+.log-entry { 
+    margin-bottom: 8px; 
+    color: #3fb950; 
+}
+
+.log-warning { 
+    color: #ff7b72; 
+}
+
+/* --- CROP MANAGEMENT SYSTEM STYLES --- */
+.crop-management-container {
+    flex: 1.2; /* Biraz geniş alan veriyoruz */
+    min-width: 380px; /* Asla bu boyuttan daha fazla küçülmesine/ezilmesine izin verme */
+    max-width: 450px; /* İçerik gelince bu boyutu aşıp diğerlerini ezmesin */
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 0; /* Eğer grafikle yan yanaysa üst boşluğu sıfırlayalım ki hizalı dursun */
+}
+
+.crop-management-container h2 {
+    color: #c9d1d9;
+    margin-top: 0;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 10px;
+    font-size: 18px;
+    text-transform: uppercase;
+}
+
+.controls { 
+    margin-bottom: 20px; 
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+select, button {
+    background: #0d1117;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+select:focus { outline: none; border-color: #58a6ff; }
+
+button { 
+    background: #238636; 
+    cursor: pointer; 
+    color: white; 
+    font-weight: bold; 
+    border: none;
+    transition: background 0.3s;
+}
+
+button:hover { background: #2ea043; }
+
+.crop-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.info-card {
+    padding: 15px;
+    border-radius: 6px;
+    background: #0d1117;
+    border-left: 4px solid #30363d;
+}
+
+.info-card h3 { 
+    margin-top: 0; 
+    font-size: 14px; 
+    text-transform: uppercase;
+}
+.info-card p { 
+    font-size: 15px; 
+    margin-bottom: 0; 
+    color: #c9d1d9;
+}
+
+/* Renkli Kenarlıklar */
+.warning { border-left-color: #ff7b72; }
+.warning h3 { color: #ff7b72; }
+
+.cure { border-left-color: #58a6ff; }
+.cure h3 { color: #58a6ff; }
+
+.companion { border-left-color: #3fb950; }
+.companion h3 { color: #3fb950; }
+
+.resources { border-left-color: #d2a8ff; }
+.resources h3 { color: #d2a8ff; }
+
+.override-btn {
+    flex: 1;
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+.override-btn:hover { border-color: #8b949e; background: #30363d; }
+.override-btn:active { transform: scale(0.98); }
