@@ -1,269 +1,117 @@
-// app.js - BİRLEŞTİRİLMİŞ TAM SÜRÜM (HACKATHON READY)
-
-// ==========================================
-// 1. GRAFİK (CHART) KURULUMU
-// ==========================================
-const ctx = document.getElementById('telemetryChart').getContext('2d');
-const telemetryChart = new Chart(ctx, {
+// 1. GRAFİK KURULUMU (Su Sıcaklığı ve pH)
+const ctx = document.getElementById('hydroChart').getContext('2d');
+const hydroChart = new Chart(ctx, {
     type: 'line',
     data: {
-        labels: ['','','','','','','','','',''], // X ekseni için 10 boş etiket
+        labels: [],
         datasets: [
-            {
-                label: 'Temperature (°C)',
-                borderColor: '#ff7b72', // Kırmızı çizgi
-                backgroundColor: 'rgba(255, 123, 114, 0.1)',
-                data: [24, 24, 24, 24, 24, 24, 24, 24, 24, 24],
-                tension: 0.4,
-                fill: true
-            },
-            {
-                label: 'Humidity (%)',
-                borderColor: '#58a6ff', // Mavi çizgi
-                backgroundColor: 'rgba(88, 166, 255, 0.1)',
-                data: [85, 85, 85, 85, 85, 85, 85, 85, 85, 85],
-                tension: 0.4,
-                fill: true
-            }
+            { label: 'Su Sıcaklığı (°C)', borderColor: '#f87171', data: [], tension: 0.4 },
+            { label: 'pH Seviyesi', borderColor: '#a78bfa', data: [], tension: 0.4, yAxisID: 'y1' }
         ]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 0 }, // Hızlı güncellemeler için animasyon kapalı
+        responsive: true, maintainAspectRatio: false, animation: false,
         scales: {
-            y: { beginAtZero: false, min: 10, max: 100 }
+            y: { type: 'linear', display: true, position: 'left', min: 15, max: 35, title: { display: true, text: 'Sıcaklık' } },
+            y1: { type: 'linear', display: true, position: 'right', min: 4, max: 9, title: { display: true, text: 'pH' } }
         },
-        plugins: {
-            legend: { labels: { color: '#c9d1d9' } } // Karanlık mod için efsane metni
-        }
+        plugins: { legend: { labels: { color: '#f8fafc' } } }
     }
 });
 
-// ==========================================
-// 2. TERMİNAL LOG FONKSİYONU
-// ==========================================
-function logAction(message, isWarning = false) {
-    const terminal = document.getElementById('terminal');
+function logTerminal(msg, type = 'normal') {
+    const term = document.getElementById('terminal');
     const time = new Date().toLocaleTimeString();
-    const logHTML = `<div class="log-entry ${isWarning ? 'log-warning' : ''}">> [${time}] ${message}</div>`;
-    terminal.innerHTML += logHTML;
-    terminal.scrollTop = terminal.scrollHeight; // Otomatik olarak en alta kaydır
+    let color = type === 'warn' ? 'log-warn' : (type === 'crit' ? 'log-crit' : '');
+    term.innerHTML += `<div class="${color}">> [${time}] ${msg}</div>`;
+    term.scrollTop = term.scrollHeight;
 }
 
-// ==========================================
-// 3. NODE-RED API VE SİMÜLASYON DÖNGÜSÜ
-// ==========================================
-let currentTemp = 24.0;
-let currentHum = 85.0;
-let currentWater = 100.0;
+// 2. OTONOM SİMÜLASYON VE NODE.JS BAĞLANTISI
+// Başlangıç değerleri (İdeal Hidroponik Şartlar)
+let simData = { waterTemp: 22.0, ph: 6.0, ec: 1.8, do: 8.5 };
 
-// Node-RED'in veri göndereceği adres
-const NODE_RED_API_URL = "http://localhost:1880/api/mars-data"; 
-
-// Arayüzü ve grafiği güncelleyen ortak fonksiyon
-function updateDashboard(temp, hum, water) {
-    document.getElementById('val-temp').innerText = temp.toFixed(1) + " °C";
-    document.getElementById('val-hum').innerText = hum.toFixed(1) + " %";
-    document.getElementById('val-water').innerText = water.toFixed(1) + " %";
-
-    telemetryChart.data.datasets[0].data.shift();
-    telemetryChart.data.datasets[1].data.shift();
-    
-    telemetryChart.data.datasets[0].data.push(temp);
-    telemetryChart.data.datasets[1].data.push(hum);
-    telemetryChart.update();
-}
-
-// Backend çökerse veya dataset yoksa çalışacak yedek simülasyon
-function runSimulationFallback() {
-    currentTemp += (Math.random() - 0.5) * 0.5;
-    currentHum -= 0.5; 
-    currentWater -= 0.1; 
-
-    if (currentHum < 75) {
-        currentHum = 95;
-        currentWater -= 2;
-        logAction("Humidity low. Ultrasonic misting engaged.");
-    }
-    if (currentTemp > 26) {
-        currentTemp -= 1.5;
-        logAction("Temp spike detected. Cooling fans activated.", true);
-    }
-
-    updateDashboard(currentTemp, currentHum, currentWater);
-}
-
-// Node-RED'den veriyi çeken ana fonksiyon
-async function getMarsTelemetry() {
+async function fetchHydroData() {
     try {
-        const response = await fetch(NODE_RED_API_URL);
-        if (response.ok) {
-            const data = await response.json();
-            currentTemp = data.temp;
-            currentHum = data.humidity;
-            currentWater = data.water;
-            
-            updateDashboard(currentTemp, currentHum, currentWater);
-            
-            // Veri setinden (Node-RED'den) özel bir uyarı gelirse terminale bas
-            if(data.alert) {
-                logAction(`[SYSTEM] ${data.alert}`, true);
-            }
+        /* ======== NODE.JS ENTEGRASYONU ========
+        Arka uç hazır olduğunda aşağıdaki YORUM SATIRLARINI KALDIRIN.
+        O zamana kadar sistem kendi kendini simüle edecek.
+        */
+
+        // const response = await fetch('http://localhost:3000/api/hydrodata');
+        // if (!response.ok) throw new Error('API Hatası');
+        // simData = await response.json(); 
+        // document.getElementById('connection-status').textContent = "Node.js'e Bağlı";
+        // document.getElementById('connection-status').className = "status-online";
+
+        // --- GEÇİCİ SİMÜLASYON MANTIĞI (Node.js yokken çalışır) ---
+        simData.waterTemp += (Math.random() - 0.4) * 0.3; // Su yavaşça ısınır
+        simData.ph += 0.05; // pH zamanla yükselir (Bitki besin yedikçe)
+
+        // Isınan suda oksijen azalır
+        simData.do = 12.5 - (simData.waterTemp * 0.2);
+
+        // Otonom Zeka (Jüri Şovu)
+        if (simData.waterTemp > 24.5) {
+            document.getElementById('status-chiller').className = "badge badge-active";
+            document.getElementById('status-chiller').innerText = "SOĞUTUYOR";
+            simData.waterTemp -= 0.8; // Chiller suyu soğutur
+            logTerminal("Su sıcaklığı kritik! Chiller devreye alındı.", "warn");
         } else {
-            runSimulationFallback();
+            document.getElementById('status-chiller').className = "badge badge-standby";
+            document.getElementById('status-chiller').innerText = "BEKLEMEDE";
         }
+
+        if (simData.ph > 6.5) {
+            document.getElementById('status-phdoser').className = "badge badge-alert";
+            document.getElementById('status-phdoser').innerText = "ASİT BASILIYOR";
+            simData.ph -= 0.3; // pH düşürücü asit pompası
+            logTerminal("Yüksek pH tespit edildi. pH-Down solüsyonu enjekte ediliyor.", "crit");
+        } else {
+            document.getElementById('status-phdoser').className = "badge badge-standby";
+            document.getElementById('status-phdoser').innerText = "BEKLEMEDE";
+        }
+        // -----------------------------------------------------------
+
+        updateUI(simData);
+
     } catch (error) {
-        // Node-RED kapalıysa arayüzün donmaması için simülasyonu çalıştır
-        runSimulationFallback();
+        console.error(error);
+        document.getElementById('connection-status').textContent = "Node.js Bekleniyor...";
+        document.getElementById('connection-status').className = "status-offline";
     }
 }
 
-// Her 1 saniyede bir verileri çek (veya simüle et)
-setInterval(getMarsTelemetry, 1000);
+function updateUI(data) {
+    document.getElementById('val-watertemp').textContent = data.waterTemp.toFixed(1) + " °C";
+    document.getElementById('val-ph').textContent = data.ph.toFixed(2);
+    document.getElementById('val-ec').textContent = data.ec.toFixed(1) + " mS/cm";
+    document.getElementById('val-do').textContent = data.do.toFixed(1) + " mg/L";
 
-// ==========================================
-// 4. BİTKİ VE SAĞLIK YÖNETİM SİSTEMİ (CROP MANAGEMENT)
-// ==========================================
-const cropDatabase = {
-    "Patates": {
-        warning: "High risk of constipation due to low fiber & high carbohydrates.",
-        cure: "Plant Spinach (High fiber) or Beans.",
-        companion: "Beans (fixes nitrogen in soil for potatoes).",
-        resources: "Water: HIGH | Light: MEDIUM | Soil: DEEP"
-    },
-    "Ispanak": {
-        warning: "Kidney stone risk due to high oxalate levels.",
-        cure: "Plant Tomatoes (Vitamin C helps oxalate processing).",
-        companion: "Strawberries or Peas.",
-        resources: "Water: MEDIUM | Light: LOW | Soil: SHALLOW"
-    },
-    "Domates": {
-        warning: "Acid reflux or heartburn from prolonged overconsumption.",
-        cure: "Plant alkaline greens like Spinach.",
-        companion: "Basil or Carrots.",
-        resources: "Water: HIGH | Light: HIGH | Nutrients: HIGH"
-    },
-    "Fasulye": {
-        warning: "Digestive issues / gas if consumed as primary calorie source.",
-        cure: "Plant Fennel or Mint (Digestion aids).",
-        companion: "Potatoes or Corn.",
-        resources: "Water: LOW | Light: HIGH | Trait: NITROGEN FIXING"
+    const now = new Date().toLocaleTimeString();
+    hydroChart.data.labels.push(now);
+    hydroChart.data.datasets[0].data.push(data.waterTemp);
+    hydroChart.data.datasets[1].data.push(data.ph);
+
+    if (hydroChart.data.labels.length > 15) {
+        hydroChart.data.labels.shift();
+        hydroChart.data.datasets[0].data.shift();
+        hydroChart.data.datasets[1].data.shift();
     }
-};
+    hydroChart.update();
+}
 
-document.getElementById('plant-btn').addEventListener('click', () => {
-    const selectedCrop = document.getElementById('crop-select').value;
-    const infoDiv = document.getElementById('crop-info');
-    
-    if(!selectedCrop) {
-        logAction("ERROR: No crop selected for planting. Aborting.", true);
-        return;
-    }
+// Döngüyü başlat
+setInterval(fetchHydroData, 1500);
 
-    const data = cropDatabase[selectedCrop];
-    
-    // UI Bilgilerini Doldur
-    document.getElementById('crop-warning').innerText = data.warning;
-    document.getElementById('crop-cure').innerText = data.cure;
-    document.getElementById('crop-companion').innerText = data.companion;
-    document.getElementById('crop-resources').innerText = data.resources;
-    
-    // Paneli Görünür Yap
-    infoDiv.style.display = 'grid'; 
-    
-    // Terminal Logları (Jüri Şovu)
-    logAction(`[BIO-SYS] ${selectedCrop} planting sequence initiated.`);
-    logAction(`[BIO-SYS] Scanning companion compatibility... OK.`);
-    
-    // Ekim yapıldığı için sistemdeki suyu azalt ve grafiği güncelle
-    currentWater -= 5.0; 
-    updateDashboard(currentTemp, currentHum, currentWater);
-    logAction(`[PUMP] Irrigating soil for new ${selectedCrop} seeds... Water level dropped.`);
-});
+// --- JÜRİ TEST BUTONLARI FONKSİYONLARI ---
 
-// ==========================================
-// 5. MISSION TIMER (Görev Kronometresi)
-// ==========================================
-let missionSeconds = 0;
-setInterval(() => {
-    missionSeconds++;
-    const hrs = String(Math.floor(missionSeconds / 3600)).padStart(2, '0');
-    const mins = String(Math.floor((missionSeconds % 3600) / 60)).padStart(2, '0');
-    const secs = String(missionSeconds % 60).padStart(2, '0');
-    document.getElementById('mission-timer').innerText = `T+ ${hrs}:${mins}:${secs}`;
-}, 1000);
+function triggerHeatSpike() {
+    simData.waterTemp = 29.5; // Sıcaklığı aniden tehlikeli seviyeye çek
+    logTerminal("MANUEL MÜDAHALE: Isıtıcılar maksimuma alındı!", "crit");
+}
 
-// ==========================================
-// 6. MANUEL KONTROL BUTONLARI (Actuators)
-// ==========================================
-document.getElementById('btn-water').addEventListener('click', () => {
-    logAction("[MANUAL] Water pump toggled. Flow rate increased.", false);
-    currentWater += 10.0; // Suyu manuel artır
-    if(currentWater > 100) currentWater = 100;
-    document.getElementById('val-water').innerText = currentWater.toFixed(1) + " %";
-});
-
-document.getElementById('btn-fan').addEventListener('click', () => {
-    logAction("[MANUAL] Emergency ventilation activated! O2 mixing...", true);
-    currentTemp -= 2.0; // Sıcaklığı aniden düşür
-    document.getElementById('val-temp').innerText = currentTemp.toFixed(1) + " °C";
-});
-
-document.getElementById('btn-light').addEventListener('click', () => {
-    logAction("[MANUAL] UV Light arrays set to 150% capacity.", false);
-    document.getElementById('val-lux').innerText = "18000 lx"; // Işığı manuel artır
-    setTimeout(() => { document.getElementById('val-lux').innerText = "12000 lx"; }, 3000); // 3 sn sonra geri al
-});
-
-// ==========================================
-// YENI MANUEL KONTROL BUTONLARI (Actuators)
-// ==========================================
-
-// 1. Besin Enjeksiyonu
-document.getElementById('btn-nutrient').addEventListener('click', () => {
-    logAction("[MANUAL] Injecting nutrient solution (N-P-K) into soil.");
-    logAction("[BIO-SYS] Root absorption rate: OPTIMAL.");
-});
-
-// 2. CO2 Basımı
-document.getElementById('btn-co2').addEventListener('click', () => {
-    // Terminale yaz
-    logAction("[MANUAL] Manual CO2 spike for growth boost. [WARNING]", true);
-    
-    // Simülasyonu etkile (CO2'yi zıplat)
-    currentCO2 = 850; 
-    document.getElementById('val-co2').innerText = currentCO2.toFixed(0) + " ppm";
-    
-    // 5 saniye sonra normal değere geri dön
-    setTimeout(() => { 
-        currentCO2 = 400; 
-        document.getElementById('val-co2').innerText = currentCO2.toFixed(0) + " ppm";
-        logAction("[SYSTEM] CO2 levels normalized.");
-    }, 5000); 
-});
-
-// 3. Radyasyon Kalkanı
-document.getElementById('btn-shield').addEventListener('click', () => {
-    logAction("[ALERT] Solar radiation spike detected! Manual shielding initiated.", true);
-    
-    // Işığı manuel sıfırla (Kalkan kapandığı için)
-    currentLux = 0;
-    document.getElementById('val-lux').innerText = currentLux.toFixed(0) + " lx";
-    
-    setTimeout(() => { 
-        currentLux = 12000;
-        document.getElementById('val-lux').innerText = currentLux.toFixed(0) + " lx";
-        logAction("[SYSTEM] Radiation threat passed. De-shielding...");
-    }, 4000); // 4 saniye sonra kalkanı aç
-});
-
-// 4. Hasat Protokolü
-document.getElementById('btn-harvest').addEventListener('click', () => {
-    logAction("[PROTOCOL] HARVEST: Collecting biomass yield.");
-    logAction("[PROTOCOL] CROP MANAGEMENT: Soil preparation for next rotation.");
-    
-    // Hasat yapıldığı için su tankı kullanımını düşür
-    currentWater = 100.0;
-    document.getElementById('val-water').innerText = currentWater.toFixed(1) + " %";
-});
+function triggerPhSpike() {
+    simData.ph = 7.8; // pH'ı aniden boz
+    logTerminal("MANUEL MÜDAHALE: Suya asit baz dengesizliği verildi!", "crit");
+}
