@@ -1,116 +1,105 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KOTA: Autonomous Space Agriculture</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <title>KOTA - Hidroponik Uzay Tarımı</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
-    <div class="header" style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="text-align: left;">
-            <h1>KOTA Life Support</h1>
-            <p>Software-in-the-Loop (SITL) Digital Twin</p>
-        </div>
-        <div
-            style="text-align: right; background: #161b22; padding: 10px 20px; border-radius: 8px; border: 1px solid #30363d;">
-            <div style="color: #8b949e; font-size: 12px; text-transform: uppercase;">Mission Elapsed Time (MET)</div>
-            <div id="mission-timer" style="font-size: 24px; color: #58a6ff; font-family: monospace; font-weight: bold;">
-                T+ 00:00:00</div>
-            <div id="system-status" style="color: #3fb950; font-size: 12px; margin-top: 5px;">🟢 STATUS: NOMINAL</div>
-        </div>
-    </div>
-
-    <div class="kpi-container">
-        <div class="kpi-card">
-            <div class="kpi-title">Cabin Temperature</div>
-            <div class="kpi-value" id="val-temp">24.0 °C</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Root Humidity</div>
-            <div class="kpi-value" id="val-hum" style="color: #58a6ff;">85.0 %</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Water Tank Level</div>
-            <div class="kpi-value" id="val-water" style="color: #58a6ff;">100 %</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Cabin O2 Level</div>
-            <div class="kpi-value" id="val-o2" style="color: #3fb950;">21.0 %</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">CO2 Concentration</div>
-            <div class="kpi-value" id="val-co2" style="color: #ff7b72;">400 ppm</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Artificial Sun (LUX)</div>
-            <div class="kpi-value" id="val-lux" style="color: #d2a8ff;">12000 lx</div>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="crop-management-container">
-            <h2>🌱 Bio-System: Crop Management</h2>
-            <div class="controls">
-                <label for="crop-select">Select Active Crop:</label>
-                <select id="crop-select">
-                    <option value="">-- Choose a crop --</option>
-                    <option value="Patates">Potato (Solanum tuberosum)</option>
-                    <option value="Ispanak">Spinach (Spinacia oleracea)</option>
-                    <option value="Domates">Tomato (Solanum lycopersicum)</option>
-                    <option value="Fasulye">Bean (Phaseolus vulgaris)</option>
-                </select>
-                <button id="plant-btn">INITIATE PLANTING SEQUENCE</button>
+    <div class="container">
+        <header>
+            <div>
+                <h1>KOTA - Hidroponik Yaşam Destek Ünitesi</h1>
+                <p style="color: #94a3b8; margin-top: 5px;">SITL (Software-in-the-Loop) Simülasyonu</p>
             </div>
+            <div id="connection-status" class="status-offline">Node.js Bekleniyor...</div>
+        </header>
 
-            <div class="crop-info-grid" id="crop-info" style="display: none;">
-                <div class="info-card warning">
-                    <h3>⚠️ Health Risk (Overconsumption)</h3>
-                    <p id="crop-warning">-</p>
-                </div>
-                <div class="info-card cure">
-                    <h3>💊 Required Remedy Crop</h3>
-                    <p id="crop-cure">-</p>
-                </div>
-                <div class="info-card companion">
-                    <h3>🤝 Companion Plant</h3>
-                    <p id="crop-companion">-</p>
-                </div>
-                <div class="info-card resources">
-                    <h3>📊 Resource Profile</h3>
-                    <p id="crop-resources">-</p>
-                </div>
+        <div class="kpi-grid">
+            <div class="card">
+                <h3>Su Sıcaklığı</h3>
+                <p id="val-watertemp" style="color: #f87171;">-- °C</p>
+            </div>
+            <div class="card">
+                <h3>pH Seviyesi</h3>
+                <p id="val-ph" style="color: #a78bfa;">--</p>
+            </div>
+            <div class="card">
+                <h3>Besin (EC)</h3>
+                <p id="val-ec" style="color: #fbbf24;">-- mS/cm</p>
+            </div>
+            <div class="card">
+                <h3>Çözünmüş Oksijen</h3>
+                <p id="val-do" style="color: #38bdf8;">-- mg/L</p>
             </div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="telemetryChart"></canvas>
-        </div>
-        <div class="terminal-container" id="terminal">
-            <div class="log-entry">> System initialized...</div>
-            <div class="log-entry">> Awaiting telemetry data...</div>
+        <div class="main-grid">
+            <div class="chart-box">
+                <canvas id="hydroChart"></canvas>
+            </div>
+
+            <div class="hardware-box">
+                <h3 style="border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px;">Aktivasyon
+                    Paneli</h3>
+                <ul class="system-list">
+                    <li>Sirkülasyon Pompası: <span id="status-pump" class="badge badge-active">AKTİF</span></li>
+                    <li>Su Soğutucu (Chiller): <span id="status-chiller" class="badge badge-standby">BEKLEMEDE</span>
+                    </li>
+                    <li>Oksijenatör: <span id="status-oxy" class="badge badge-standby">BEKLEMEDE</span></li>
+                    <li>pH Düşürücü Pompası: <span id="status-phdoser" class="badge badge-standby">BEKLEMEDE</span></li>
+                </ul>
+                <div class="terminal" id="terminal">
+                    <div style="color: #4ade80;">> Sistem başlatıldı. Hidroponik döngü devrede.</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="manual-controls-container"
-        style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-top: 20px;">
-        <h2
-            style="color: #c9d1d9; margin-top: 0; font-size: 18px; border-bottom: 1px solid #30363d; padding-bottom: 10px;">
-            ⚙️ Manual Overrides (Actuators)</h2>
-        <div style="display: flex; gap: 15px;">
-            <button id="btn-water" class="override-btn">💧 Toggle Water Pump</button>
-            <button id="btn-fan" class="override-btn">💨 Emergency Ventilation</button>
-            <button id="btn-light" class="override-btn">☀️ Boost UV Lights</button>
-            <button id="btn-nutrient" class="override-btn">💉 Inject Nutrient Solution</button>
-            <button id="btn-co2" class="override-btn">💨 CO2 Spike (Growth Boost)</button>
-            <button id="btn-shield" class="override-btn">🛡️ Engage Radiation Shield</button>
-            <button id="btn-harvest" class="override-btn">🌾 Initiate Harvest Protocol</button>
+    <div class="bottom-grid">
+
+        <div class="card override-panel">
+            <h3>⚠️ Manuel Sistem Testi</h3>
+            <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">Jüri sunumu için otonom tepki testleri</p>
+            <div class="btn-group">
+                <button onclick="triggerHeatSpike()" class="btn-danger">🔥 Sıcaklık Sıçraması (29°C)</button>
+                <button onclick="triggerPhSpike()" class="btn-warning">🧪 pH Yükselmesi (7.8)</button>
+            </div>
         </div>
+
+        <!--<div class="card camera-panel">
+            <div class="cam-header">
+                <h3>📷 Kapsül İçi Optik Sensör</h3>
+                <span class="rec-indicator"><span class="rec-dot"></span> CANLI</span>
+            </div>
+            <div class="cam-feed">
+                <p class="cam-text">GÖRÜNTÜ AKTARILIYOR...</p>
+                <p class="cam-subtext">Kök Gelişim Oranı: %78 (Stabil)</p>
+            </div>
+        </div>-->
+
+        <div class="card mission-panel">
+            <h3>🚀 Görev İlerleyişi</h3>
+            <div class="stat-row">
+                <span>Tahmini Hasat:</span>
+                <strong>34 Gün Kaldı</strong>
+            </div>
+            <div class="stat-row">
+                <span>Sistem Su Tasarrufu:</span>
+                <strong style="color: #4ade80; text-shadow: 0 0 10px #4ade80;">%96.4</strong>
+            </div>
+            <div class="stat-row">
+                <span>Hedef Kalori Artışı:</span>
+                <strong style="color: #38bdf8;">+2450 kcal</strong>
+            </div>
+        </div>
+
     </div>
 
     <script src="app.js"></script>
