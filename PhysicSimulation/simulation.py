@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-app = FastAPI(title="KOTA Hidroponik SITL Fizik Motoru")
+app = FastAPI(title="KOTA NPK Akıllı Tarım Motoru")
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,7 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- DİNAMİK DOSYA YOLU (ÇÖKME HATASI %100 ÇÖZÜLDÜ) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH = os.path.join(BASE_DIR, "..", "IoTSimulation", "VEG-01C_EDA_Telemetry_data.csv")
 
@@ -43,7 +42,7 @@ except FileNotFoundError:
     print(f"⚠️ KRİTİK HATA: Veri seti bulunamadı! Aranan yol: {CSV_PATH}")
     dataset.append({"time": "DOSYA HATASI", "iss_temp": 23.0, "iss_hum": 40.0})
 
-# 2. HİDROPONİK KABİN DURUMU (State)
+# 2. HİDROPONİK & MİNERAL (NPK) DURUMU
 current_row_index = 0
 state = {
     "current_time": "Başlatılıyor...",
@@ -52,12 +51,14 @@ state = {
     "water_tank_liters": 20.0,
     "water_temp": 22.0,  
     "ph": 6.0,           
-    "ec": 1.8,           
-    "do": 8.5,           
-    "system_status": "AKTIF"
+    "ec": 1.8, 
+    # NPK Mineralleri (PPM cinsinden)
+    "mineral_n": 120.0, # Azot (Nitrogen)
+    "mineral_p": 50.0,  # Fosfor (Phosphorus)
+    "mineral_k": 150.0, # Potasyum (Potassium)
+    "ai_recommendation": "Analiz Ediliyor..." # Yapay Zeka Önerisi
 }
 
-# 3. IOT CİHAZLARI
 devices = {
     "ventilation_fan": False, 
     "dehumidifier": False,    
@@ -73,15 +74,30 @@ async def physics_loop():
         iss_temp = row_data["iss_temp"]
         iss_hum = row_data["iss_hum"]
         
-        # BİYOLOJİ VE KİMYA SİMÜLASYONU
+        # SİMÜLASYON: Bitkiler mineralleri tüketir (Değişken hızlarda)
+        state["mineral_n"] -= 0.15
+        state["mineral_p"] -= 0.05
+        state["mineral_k"] -= 0.12
+
+        # AI ÖNERİ ALGORİTMASI: Suda hangi mineral yoğunluktaysa, o minerali seven bitkiyi öner
+        total_minerals = state["mineral_n"] + state["mineral_p"] + state["mineral_k"]
+        
+        if total_minerals < 100:
+            state["ai_recommendation"] = "⚠️ Mineraller Tükendi: Besin Ekleyin!"
+        elif state["mineral_n"] > state["mineral_k"] and state["mineral_n"] > state["mineral_p"]:
+            state["ai_recommendation"] = "🥬 Marul Ekin (Yüksek Azot Tespit Edildi)"
+        elif state["mineral_k"] > state["mineral_n"] and state["mineral_k"] > state["mineral_p"]:
+            state["ai_recommendation"] = "🥔 Patates Ekin (Yüksek Potasyum Tespit Edildi)"
+        else:
+            state["ai_recommendation"] = "🍓 Çilek Ekin (Dengeli / Fosfor Uygun)"
+
+        # Temel Fizik ve Kimya
         state["chamber_humidity"] += 0.5  
         state["water_tank_liters"] -= 0.05 
         state["ph"] += 0.02 
         
         if state["water_temp"] < state["chamber_temperature"]:
             state["water_temp"] += 0.05
-            
-        state["do"] = max(4.0, 12.5 - (state["water_temp"] * 0.15))
 
         # CİHAZLARIN ETKİSİ
         if devices["ventilation_fan"]: 
@@ -95,22 +111,14 @@ async def physics_loop():
                 state["chamber_humidity"] -= 2.0 
                 state["water_tank_liters"] += harvested 
                 
-        if devices["chiller"]:
-            state["water_temp"] -= 0.3 
-            
-        if devices["ph_doser"]:
-            state["ph"] -= 0.1 
+        if devices["chiller"]: state["water_temp"] -= 0.3 
+        if devices["ph_doser"]: state["ph"] -= 0.1 
 
-        # Limitler
         state["ph"] = max(0.0, min(14.0, state["ph"]))
         state["chamber_humidity"] = max(0.0, min(100.0, state["chamber_humidity"])) 
         
-        # SADECE 1 KERE ARTIR (Çökme hatası düzeltildi)
         current_row_index += 1
-        
-        # Terminale veri yazdır ki jüri çalıştığını görsün
-        print(f"[{state['current_time']}] Sıcaklık: {state['chamber_temperature']:.1f}°C | Nem: {state['chamber_humidity']:.1f}% | pH: {state['ph']:.1f}")
-        
+        print(f"[{state['current_time']}] N:{state['mineral_n']:.0f} P:{state['mineral_p']:.0f} K:{state['mineral_k']:.0f} | Öneri: {state['ai_recommendation']}")
         await asyncio.sleep(1)
 
 @app.on_event("startup")
@@ -118,18 +126,16 @@ async def startup_event():
     asyncio.create_task(physics_loop())
 
 @app.get("/api/sensors")
-def get_data(): 
-    return state
+def get_data(): return state
 
 class Command(BaseModel):
-    device: str
-    action: bool
+    device: str; action: bool
 
 @app.post("/api/device")
 def control_device(cmd: Command):
     if cmd.device in devices:
         devices[cmd.device] = cmd.action
-        return {"status": "success", "device": cmd.device, "state": cmd.action}
+        return {"status": "success"}
     return {"status": "error"}
 
 if __name__ == "__main__":

@@ -36,10 +36,14 @@ async function fetchHydroData() {
         document.getElementById('connection-status').className = "status-online";
 
         // HTML içindeki doğru ID'leri güncelliyoruz (Eski HTML'inize uygun olarak)
-        document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
+document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
         document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
         document.getElementById('val-water').textContent = simData.water_tank_liters.toFixed(2) + " L";
         document.getElementById('val-biomass').textContent = "Hidroponik"; // Biomass yerine sistem tipi
+        document.getElementById('val-n').textContent = simData.mineral_n.toFixed(0);
+        document.getElementById('val-p').textContent = simData.mineral_p.toFixed(0);
+        document.getElementById('val-k').textContent = simData.mineral_k.toFixed(0);
+        document.getElementById('val-ai').textContent = simData.ai_recommendation;
 
         // Grafiği Güncelle
         const now = new Date().toLocaleTimeString();
