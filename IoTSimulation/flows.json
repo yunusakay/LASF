@@ -82,5 +82,14 @@
         "wires": [
             []
         ]
-    }
+    },
+
+    [
+    {"id":"ws_config","type":"websocket-listener","path":"/uzay-verisi","wholemsg":"false"},
+    {"id":"addon_logic","type":"function","name":"pH & EC Simüle Et + Karar","func":"// Eski sıcaklık verisini alıyoruz (Yoksa 23 varsayıyoruz)\nlet temp = msg.payload.Temp_degC_ISS || 23.0;\n\n// 3 bitki için ortak yaşam (Sweet Spot) pH ve EC simülasyonu\nlet current_pH = (5.8 + (Math.random() * 0.4 - 0.2)).toFixed(2);\nlet current_EC = (1.5 + (Math.random() * 0.3 - 0.15)).toFixed(2);\n\nlet status = \"✅ OPTİMAL: 3'lü Ekosistem Stabil\";\nlet color = \"#00ff00\";\n\nif (current_EC < 1.4) {\n    status = \"⚠️ MİNERAL DÜŞÜK: EC Pompası Devrede\";\n    color = \"#ffaa00\";\n} else if (current_pH > 6.0) {\n    status = \"⚠️ pH YÜKSEK: Asit Dozajı Yapılıyor\";\n    color = \"#ff0000\";\n} else if (temp > 23.4) {\n    status = \"⚠️ SICAKLIK KRİTİK: Fanlar Açık\";\n    color = \"#ff0000\";\n}\n\n// Tüm verileri tek bir pakette birleştir (Web sitesi için)\nmsg.payload.pH_Level = Number(current_pH);\nmsg.payload.EC_Level = Number(current_EC);\nmsg.payload.SystemStatus = status;\nmsg.color = color;\n\n// 1. Çıkış: WebSocket (Tüm veriler)\n// 2. Çıkış: pH Göstergesi\n// 3. Çıkış: EC Göstergesi\n// 4. Çıkış: Durum Metni\nreturn [\n    msg, \n    {payload: msg.payload.pH_Level}, \n    {payload: msg.payload.EC_Level}, \n    {payload: status, color: color}\n];","outputs":4,"noerr":0,"initialize":"","finalize":"","libs":[],"x":400,"y":400,"wires":[["ws_out"],["gauge_ph"],["gauge_ec"],["text_status"]]},
+    {"id":"ws_out","type":"websocket out","name":"Web Sitesine Gönder","server":"ws_config","client":"","x":700,"y":300,"wires":[]},
+    {"id":"gauge_ph","type":"ui_gauge","name":"pH Seviyesi","group":"group1","order":5,"width":0,"height":0,"gtype":"gage","title":"🧪 pH Seviyesi","label":"pH","format":"{{value}}","min":"4","max":"8","colors":["#ff0000","#00ff00","#ff0000"],"seg1":"5.5","seg2":"6.2","x":670,"y":360,"wires":[]},
+    {"id":"gauge_ec","type":"ui_gauge","name":"Mineral (EC)","group":"group1","order":6,"width":0,"height":0,"gtype":"gage","title":"⚡ Mineral (EC)","label":"mS/cm","format":"{{value}}","min":"0","max":"3","colors":["#ffaa00","#00ff00","#ff0000"],"seg1":"1.2","seg2":"2.0","x":670,"y":420,"wires":[]},
+    {"id":"text_status","type":"ui_text","name":"Durum Panosu","group":"group1","order":7,"width":0,"height":0,"format":"<div style='color:{{msg.color}}; font-weight:bold; font-size:1.2em;'>{{msg.payload}}</div>","label":"Sistem Durumu:","x":680,"y":480,"wires":[]}
+]
 ]
