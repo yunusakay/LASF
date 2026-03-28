@@ -17,7 +17,7 @@ app.add_middleware(
 
 # 1. NASA VERİ SETİNİ YÜKLE
 dataset = []
-with open("../IoTSimulation/VEG-01C_EDA_Telemetry_data.csv", mode="r", encoding="utf-8") as file:
+with open("C:\\Users\\Emir\\Desktop\\LASF\\IoTSimulation\\VEG-01C_EDA_Telemetry_data.csv", mode="r", encoding="utf-8") as file:
     reader = csv.DictReader(file)
     last_valid_temp = 23.0
     last_valid_hum = 40.0

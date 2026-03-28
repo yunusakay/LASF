@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 // 1. GRAFİK KURULUMU
-=======
->>>>>>> e9ec7f75d50a77e809831e3580836bfb475ee837
 const ctx = document.getElementById('hydroChart').getContext('2d');
 const hydroChart = new Chart(ctx, {
     type: 'line',
@@ -30,7 +27,7 @@ function logTerminal(msg, type = 'normal') {
     term.scrollTop = term.scrollHeight;
 }
 
-<<<<<<< HEAD
+
 // 2. NODE-RED WEBSOCKET BAĞLANTISI (Ana Veri Akışı)
 const ws = new WebSocket('ws://localhost:1880/ws/telemetry');
 
@@ -108,7 +105,6 @@ function toggleDevice(deviceName, actionState) {
         badge.innerText = "BEKLEMEDE";
     }
 }
-=======
 async function fetchHydroData() {
     try {
         // Python API'sinden Gerçek Veriyi Çekiyoruz!
@@ -180,4 +176,3 @@ setInterval(() => {
         }
     }
 }, 3000); // 3 saniyede bir terminale yazı düşer
->>>>>>> e9ec7f75d50a77e809831e3580836bfb475ee837
