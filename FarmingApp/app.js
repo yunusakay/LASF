@@ -27,79 +27,44 @@ function logTerminal(msg, type = 'normal') {
     term.scrollTop = term.scrollHeight; // Otomatik aşağı kaydır
 }
 
-// 2. NODE-RED WEBSOCKET BAĞLANTISI (Ana Veri Akışı)
-const ws = new WebSocket('ws://localhost:1880/ws/telemetry');
+// 2. PYTHON API ENTEGRASYONU (WebSocket Yerine Doğrudan Veri Çekimi)
+async function fetchHydroData() {
+    try {
+        const response = await fetch('http://localhost:8000/api/sensors');
+        if (!response.ok) throw new Error('API Hatası');
+        let simData = await response.json(); 
+        
+        document.getElementById('connection-status').textContent = `Uzay Saati: ${simData.current_time} | Python NPK Motoruna Bağlı`;
+        document.getElementById('connection-status').className = "status-online";
 
-ws.onopen = function () {
-    console.log("Node-RED'e başarıyla bağlanıldı!");
-    const statusEl = document.getElementById('connection-status');
-    statusEl.textContent = "Node-RED Canlı Veri (NASA VEG-01C)";
-    statusEl.className = "status-online";
-    logTerminal("Sistem Çevrimiçi: Python ve NASA Telemetri verisi alınıyor...", "normal");
-};
+        // HTML içindeki ID'leri güncelliyoruz
+        document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
+        document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
+        
+        // NPK ve AI Eşleştirmesi (Gübre ve Bitki Önerisi)
+        document.getElementById('val-n').textContent = simData.mineral_n.toFixed(0);
+        document.getElementById('val-p').textContent = simData.mineral_p.toFixed(0);
+        document.getElementById('val-k').textContent = simData.mineral_k.toFixed(0);
+        document.getElementById('val-ai').textContent = simData.ai_recommendation;
 
-ws.onmessage = function (event) {
-    const data = JSON.parse(event.data);
+        // Grafiği Güncelle
+        const now = new Date().toLocaleTimeString();
+        hydroChart.data.labels.push(now);
+        hydroChart.data.datasets[0].data.push(simData.chamber_temperature);
+        hydroChart.data.datasets[1].data.push(simData.chamber_humidity);
 
-    // 1. ÜST KARTLARI (KPI) GÜNCELLE
-    document.getElementById('val-temp').textContent = data.chamber_temperature.toFixed(1) + " °C";
-    document.getElementById('val-hum').textContent = data.chamber_humidity.toFixed(1) + " %";
-    document.getElementById('val-water').textContent = data.water_tank_liters.toFixed(1) + " L";
-
-    // NPK Değerlerini birleştirerek göster
-    document.getElementById('val-npk').textContent = `N:${data.mineral_n.toFixed(0)} P:${data.mineral_p.toFixed(0)} K:${data.mineral_k.toFixed(0)}`;
-
-    // 2. ALT PANELİ GÜNCELLE (Zaman ve AI Önerisi)
-    document.getElementById('nasa-time').textContent = data.current_time;
-    document.getElementById('ai-status').textContent = data.ai_recommendation;
-
-    // 3. AKTİVASYON PANELİ ROZETLERİNİ GÜNCELLE
-    function updateBadge(id, isActive, activeText) {
-        const badge = document.getElementById(id);
-        if (isActive) {
-            if (badge.innerText !== activeText) {
-                badge.className = "badge badge-active";
-                badge.innerText = activeText;
-            }
-        } else {
-            if (badge.innerText !== "BEKLEMEDE") {
-                badge.className = "badge badge-standby";
-                badge.innerText = "BEKLEMEDE";
-            }
+        if (hydroChart.data.labels.length > 20) {
+            hydroChart.data.labels.shift();
+            hydroChart.data.datasets[0].data.shift();
+            hydroChart.data.datasets[1].data.shift();
         }
+        hydroChart.update();
+
+    } catch (error) {
+        document.getElementById('connection-status').textContent = "Python Sunucusu Bekleniyor...";
+        document.getElementById('connection-status').className = "status-offline";
     }
-
-    // Node-RED'deki otonom mantığın arayüze yansıması
-    // EKRAN KIRMIZI ALARM YÖNETİMİ
-    if (data.chamber_temperature > 24.5) {
-        document.body.classList.add('red-alert-mode'); // Ekranı kırmızı parlat
-    } else {
-        document.body.classList.remove('red-alert-mode'); // Normale dön
-    }
-    updateBadge('status-dehumidifier', data.chamber_humidity > 60.0, 'SU TOPLUYOR');
-    updateBadge('status-npk', data.ai_recommendation.includes("Ekle"), 'DOZLUYOR');
-
-    // 4. GRAFİĞİ GÜNCELLE
-    hydroChart.data.labels.push(data.current_time);
-    hydroChart.data.datasets[0].data.push(data.chamber_temperature);
-    hydroChart.data.datasets[1].data.push(data.chamber_humidity);
-
-    if (hydroChart.data.labels.length > 20) {
-        hydroChart.data.labels.shift();
-        hydroChart.data.datasets[0].data.shift();
-        hydroChart.data.datasets[1].data.shift();
-    }
-    hydroChart.update();
-};
-
-ws.onerror = function (error) {
-    document.getElementById('connection-status').textContent = "Node-RED Bekleniyor...";
-    document.getElementById('connection-status').className = "status-offline";
-};
-
-ws.onclose = function () {
-    logTerminal("Sistem Uyarısı: Node-RED bağlantısı kesildi.", "crit");
-};
+}
 
 // 3. JÜRİ İÇİN MANUEL TEST BUTONLARI (Python'a POST Gönderir)
 async function toggleDevice(deviceName, actionState) {
@@ -112,7 +77,24 @@ async function toggleDevice(deviceName, actionState) {
 
         logTerminal(`MANUEL MÜDAHALE: ${deviceName} durumu ${actionState ? 'AÇIK' : 'KAPALI'} yapıldı.`, actionState ? "warn" : "normal");
 
+        // UI Rozetlerini (Badge) Güncelle
+        let badgeId = "";
+        if(deviceName === "ventilation_fan") badgeId = "status-fan";
+        if(deviceName === "dehumidifier") badgeId = "status-dehumidifier";
+        if(deviceName === "npk_doser") badgeId = "status-npk";
+        
+        if(badgeId) {
+            const badge = document.getElementById(badgeId);
+            if(badge) {
+                badge.className = actionState ? "badge badge-active" : "badge badge-standby";
+                badge.innerText = actionState ? "AKTİF" : "BEKLEMEDE";
+            }
+        }
+
     } catch (error) {
         logTerminal("HATA: Python sunucusuna ulaşılamıyor! (Manuel Komut İletilemedi)", "crit");
     }
 }
+
+// Otonom olarak her saniye API'den veriyi çek
+setInterval(fetchHydroData, 1000);
