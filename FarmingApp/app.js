@@ -27,7 +27,7 @@ function logTerminal(msg, type = 'normal') {
     term.scrollTop = term.scrollHeight; 
 }
 
-// 2. PYTHON API ENTEGRASYONU (localhost yerine 127.0.0.1 kullanıldı)
+// 2. PYTHON API ENTEGRASYONU (WebSocket Yerine Doğrudan Veri Çekimi)
 async function fetchHydroData() {
     try {
         const response = await fetch('http://127.0.0.1:8000/api/sensors');
@@ -37,9 +37,11 @@ async function fetchHydroData() {
         document.getElementById('connection-status').textContent = `Uzay Saati: ${simData.current_time} | Python NPK Motoruna Bağlı`;
         document.getElementById('connection-status').className = "status-online";
 
-        // Değerleri Ekrana Yazdır
+        // HTML içindeki ID'leri güncelliyoruz
         document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
         document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
+        
+        // NPK ve AI Eşleştirmesi (Gübre ve Bitki Önerisi)
         document.getElementById('val-n').textContent = simData.mineral_n.toFixed(0);
         document.getElementById('val-p').textContent = simData.mineral_p.toFixed(0);
         document.getElementById('val-k').textContent = simData.mineral_k.toFixed(0);
@@ -59,6 +61,8 @@ async function fetchHydroData() {
         hydroChart.update();
 
     } catch (error) {
+        // Hata ayıklama için hatayı tarayıcı konsoluna (F12) yazdır
+        console.error("Veri çekme hatası: ", error); 
         document.getElementById('connection-status').textContent = "Python Sunucusu Bekleniyor...";
         document.getElementById('connection-status').className = "status-offline";
     }
