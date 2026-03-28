@@ -27,10 +27,6 @@ function logTerminal(msg, type = 'normal') {
     term.scrollTop = term.scrollHeight;
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 6099b589da4d9e4464f45746d20b160bd21d5ebf
 // 2. NODE-RED WEBSOCKET BAĞLANTISI (Ana Veri Akışı)
 const ws = new WebSocket('ws://localhost:1880/ws/telemetry');
 
@@ -109,7 +105,6 @@ function toggleDevice(deviceName, actionState) {
         badge.innerText = "BEKLEMEDE";
     }
 }
-<<<<<<< HEAD
 async function fetchHydroData() {
     try {
         // Python API'sinden Gerçek Veriyi Çekiyoruz!
@@ -181,5 +176,3 @@ setInterval(() => {
         }
     }
 }, 3000); // 3 saniyede bir terminale yazı düşer
-=======
->>>>>>> 6099b589da4d9e4464f45746d20b160bd21d5ebf
