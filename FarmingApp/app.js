@@ -1,3 +1,43 @@
+// --- NODE-RED WEBSOCKET BAĞLANTISI ---
+// Node-RED varsayılan olarak 1880 portunda çalışır
+const ws = new WebSocket('ws://localhost:1880/ws/telemetry');
+
+ws.onopen = function() {
+    console.log("Node-RED'e başarıyla bağlanıldı!");
+    const statusEl = document.getElementById('connection-status');
+    statusEl.textContent = "Node-RED Canlı Veri (NASA VEG-01C)";
+    statusEl.className = "status-online";
+    logTerminal("Sistem Çevrimiçi: NASA Telemetri verisi alınıyor...", "normal");
+};
+
+ws.onmessage = function(event) {
+    // Node-RED'den saniyede 2 kez gelen veriyi yakala
+    const data = JSON.parse(event.data);
+    
+    // OTONOM ZEKA (Sisteminizi koruyan kriz yönetimi)
+    if (data.waterTemp > 24.5) {
+        document.getElementById('status-chiller').className = "badge badge-active";
+        document.getElementById('status-chiller').innerText = "SOĞUTUYOR";
+        logTerminal("Kritik Sıcaklık (" + data.waterTemp + "°C) ! Chiller devrede.", "warn");
+    } else {
+        document.getElementById('status-chiller').className = "badge badge-standby";
+        document.getElementById('status-chiller').innerText = "BEKLEMEDE";
+    }
+
+    // Arayüzü gelen bu gerçek NASA verisiyle güncelle
+    updateUI(data);
+};
+
+ws.onerror = function(error) {
+    console.error("WebSocket Hatası: ", error);
+    const statusEl = document.getElementById('connection-status');
+    statusEl.textContent = "Node-RED Bekleniyor...";
+    statusEl.className = "status-offline";
+};
+
+ws.onclose = function() {
+    logTerminal("Sistem Uyarısı: Node-RED bağlantısı kesildi.", "crit");
+};
 // 1. GRAFİK KURULUMU (Su Sıcaklığı ve pH)
 const ctx = document.getElementById('hydroChart').getContext('2d');
 const hydroChart = new Chart(ctx, {
