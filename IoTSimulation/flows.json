@@ -3,14 +3,14 @@
         "id": "trigger_loop",
         "type": "inject",
         "z": "bbbeb38bf0287061",
-        "name": "Saniyede 1 Tetikle",
+        "name": "Saniyede 1 Kontrol",
         "props": [],
         "repeat": "1",
         "crontab": "",
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 150,
+        "x": 170,
         "y": 200,
         "wires": [
             [
@@ -22,7 +22,7 @@
         "id": "get_sensors",
         "type": "http request",
         "z": "bbbeb38bf0287061",
-        "name": "API'den Veri Çek",
+        "name": "Python API Oku",
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
@@ -34,12 +34,11 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 370,
+        "x": 380,
         "y": 200,
         "wires": [
             [
-                "autonomous_logic",
-                "debug_view"
+                "autonomous_logic"
             ]
         ]
     },
@@ -47,14 +46,14 @@
         "id": "autonomous_logic",
         "type": "function",
         "z": "bbbeb38bf0287061",
-        "name": "Aerogel Otonom Zekası",
-        "func": "let env = msg.payload;\nlet commands = [];\n\n// Kural 1: Eğer Nem NASA sınırını (%66) zorluyorsa Aerogel'i aç\nif (env.chamber_humidity > 60.0) {\n    commands.push({ payload: { \"device\": \"aerogel_collector\", \"action\": true } });\n} else if (env.chamber_humidity < 50.0) {\n    // Nem güvenli seviyedeyse Aerogel'i kapat\n    commands.push({ payload: { \"device\": \"aerogel_collector\", \"action\": false } });\n}\n\n// Kural 2: Sıcaklık artarsa Fanı aç\nif (env.chamber_temperature > 23.8) {\n    commands.push({ payload: { \"device\": \"ventilation_fan\", \"action\": true } });\n} else if (env.chamber_temperature < 23.2) {\n    commands.push({ payload: { \"device\": \"ventilation_fan\", \"action\": false } });\n}\n\n// Tüm komutları sırayla gönder\nreturn [commands];",
+        "name": "Hidroponik Otonom Zeka",
+        "func": "let env = msg.payload;\nlet commands = [];\n\n// Kural 1: Su Isınırsa Chiller'ı Aç\nif (env.water_temp > 24.5) {\n    commands.push({ payload: { \"device\": \"chiller\", \"action\": true } });\n} else if (env.water_temp < 23.0) {\n    commands.push({ payload: { \"device\": \"chiller\", \"action\": false } });\n}\n\n// Kural 2: pH Yükselirse Asit Pompala (pH Doser)\nif (env.ph > 6.5) {\n    commands.push({ payload: { \"device\": \"ph_doser\", \"action\": true } });\n} else if (env.ph < 6.0) {\n    commands.push({ payload: { \"device\": \"ph_doser\", \"action\": false } });\n}\n\n// Kural 3: Kabin Nemi %60'ı geçerse Nem Toplayıcıyı (Dehumidifier) aç\nif (env.chamber_humidity > 60.0) {\n    commands.push({ payload: { \"device\": \"dehumidifier\", \"action\": true } });\n} else if (env.chamber_humidity < 50.0) {\n    commands.push({ payload: { \"device\": \"dehumidifier\", \"action\": false } });\n}\n\nreturn [commands];",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 630,
+        "x": 610,
         "y": 200,
         "wires": [
             [
@@ -66,7 +65,7 @@
         "id": "post_command",
         "type": "http request",
         "z": "bbbeb38bf0287061",
-        "name": "API'ye Komut Gönder",
+        "name": "Cihazları Tetikle",
         "method": "POST",
         "ret": "txt",
         "paytoqs": "ignore",
@@ -78,27 +77,10 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 880,
+        "x": 860,
         "y": 200,
         "wires": [
             []
         ]
-    },
-    {
-        "id": "debug_view",
-        "type": "debug",
-        "z": "bbbeb38bf0287061",
-        "name": "Simülasyon Verisi",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 610,
-        "y": 120,
-        "wires": []
     }
 ]

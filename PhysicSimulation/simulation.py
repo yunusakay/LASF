@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-app = FastAPI(title="KOTA Yüksek Çözünürlüklü Fizik Motoru")
+app = FastAPI(title="KOTA Hidroponik SITL Fizik Motoru")
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,115 +15,98 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 1. NASA VERİ SETİNİ YÜKLE (ISS AMBİYANS VERİSİ)
+# 1. NASA VERİ SETİNİ YÜKLE
 dataset = []
-with open("VEG-01C_EDA_Telemetry_data.csv", mode="r", encoding="utf-8") as file:
+with open("../IoTSimulation/VEG-01C_EDA_Telemetry_data.csv", mode="r", encoding="utf-8") as file:
     reader = csv.DictReader(file)
     last_valid_temp = 23.0
     last_valid_hum = 40.0
-    
     for row in reader:
         try:
             temp = float(row["Temp_degC_ISS"])
             last_valid_temp = temp
         except ValueError:
             temp = last_valid_temp
-            
         try:
             hum = float(row["RH_percent_ISS"])
             last_valid_hum = hum
         except ValueError:
             hum = last_valid_hum
+        dataset.append({"time": row["Controller_Time_GMT"], "iss_temp": temp, "iss_hum": hum})
 
-        dataset.append({
-            "time": row["Controller_Time_GMT"],
-            "iss_temp": temp,
-            "iss_hum": hum
-        })
-
-# 2. KAPALI KABİN SİSTEM DURUMU (CHAMBER STATE)
+# 2. HİDROPONİK KABİN DURUMU (State)
 current_row_index = 0
-
 state = {
     "current_time": "Başlatılıyor...",
     "chamber_temperature": 23.0,
     "chamber_humidity": 50.0,
-    "water_tank_liters": 15.0,
-    "plant_biomass_kg": 0.5, # Bitki kütlesi (büyüdükçe su tüketimi artar)
+    "water_tank_liters": 20.0,
+    "water_temp": 22.0,  # Hidroponik su sıcaklığı
+    "ph": 6.0,           # İdeal pH
+    "ec": 1.8,           # İdeal besin değeri
+    "do": 8.5,           # Çözünmüş oksijen
     "system_status": "AKTIF"
 }
 
+# 3. IOT CİHAZLARI
 devices = {
-    "water_pump": False,
-    "fan": False, # Fan, kabin havası ile ISS havasını karıştırır
-    "aerogel_collector": False 
+    "ventilation_fan": False, # Ortam havasını karıştırır
+    "dehumidifier": False,    # Havadaki nemi toplar, suya çevirir
+    "chiller": False,         # Suyu soğutur
+    "ph_doser": False         # pH'ı düşürür (Asit pompası)
 }
 
-# 3. TERMODİNAMİK VE BİYOLOJİK SİMÜLASYON DÖNGÜSÜ
 async def physics_loop():
     global current_row_index
-    
     while current_row_index < len(dataset):
-        if state["water_tank_liters"] <= 0.0:
-            state["water_tank_liters"] = 0.0
-            state["system_status"] = "SISTEM COKTU: Su Tukendi"
-            await asyncio.sleep(1)
-            continue
-
-        # NASA Verisini Al (ISS Ortam Değerleri)
         row_data = dataset[current_row_index]
         state["current_time"] = row_data["time"]
         iss_temp = row_data["iss_temp"]
         iss_hum = row_data["iss_hum"]
         
-        # --- BİYOLOJİ: Transpirasyon (Terleme) Denklemi ---
-        # Bitki kütlesi ve ortam sıcaklığına bağlı dinamik su tüketimi
-        transpiration_rate = 0.002 * state["plant_biomass_kg"] * (state["chamber_temperature"] / 20.0)
+        # BİYOLOJİ VE KİMYA SİMÜLASYONU
+        state["chamber_humidity"] += 0.5  # Bitkiler terler, nem artar
+        state["water_tank_liters"] -= 0.05 # Bitkiler su içer
+        state["ph"] += 0.02 # Bitkiler besin yedikçe suyun pH'ı doğal olarak yükselir
         
-        # Köklerden su çekilir ve havaya nem olarak karışır (Kütle Korunumu)
-        state["water_tank_liters"] -= transpiration_rate
-        # 1 litre su buharlaştığında kapalı kabindeki nem orantısal olarak artar
-        state["chamber_humidity"] += (transpiration_rate * 50.0) 
-        
-        # Bitki çok yavaş büyür
-        state["plant_biomass_kg"] += 0.0001
+        # Su sıcaklığı ortam sıcaklığına doğru yavaşça ısınır
+        if state["water_temp"] < state["chamber_temperature"]:
+            state["water_temp"] += 0.05
+            
+        # Oksijen (DO) su ısındıkça düşer (Fizik kuralı)
+        state["do"] = max(4.0, 12.5 - (state["water_temp"] * 0.15))
 
-        # --- FİZİK: IoT Cihazlarının Etkileri ---
-        
-        # Fan çalışırsa ISS ortam havası (NASA verisi) kabin içine girer (Isı ve Kütle Transferi)
-        if devices["fan"]: 
+        # CİHAZLARIN ETKİSİ
+        if devices["ventilation_fan"]: 
             state["chamber_temperature"] += (iss_temp - state["chamber_temperature"]) * 0.4
-            state["chamber_humidity"] += (iss_hum - state["chamber_humidity"]) * 0.4
         else:
-            # Fan kapalıyken bile yalıtım kusursuz değildir, yavaş bir termal eşitleme olur
-            state["chamber_temperature"] += (iss_temp - state["chamber_temperature"]) * 0.05
+            state["chamber_temperature"] += 0.05
             
-        if devices["water_pump"]: 
-            # Pompa doğrudan köklere ve toprağa su basar, anlık buharlaşma yaratır
-            state["chamber_humidity"] += 1.5
-            state["water_tank_liters"] -= 0.1
-            
-        if devices["aerogel_collector"]:
-            # Yoğuşma Fiziği: Ortam nemi %40'ın üzerindeyse aerogel suyu hasat edebilir
+        if devices["dehumidifier"]:
             if state["chamber_humidity"] > 40.0:
-                # Nem ne kadar yüksekse, çekilen su o kadar fazladır
-                harvested_water = (state["chamber_humidity"] - 40.0) * 0.005
-                state["chamber_humidity"] -= (harvested_water * 50.0) # Havadan nem eksilir
-                state["water_tank_liters"] += harvested_water         # Su tankına eklenir
+                harvested = 0.5
+                state["chamber_humidity"] -= 2.0 # Nemi havadan çeker
+                state["water_tank_liters"] += harvested # Tanka sıvı su olarak döner!
+                
+        if devices["chiller"]:
+            state["water_temp"] -= 0.3 # Su soğutucu aktiftir
+            
+        if devices["ph_doser"]:
+            state["ph"] -= 0.1 # pH düşürücü solüsyon sıkılır
 
-        # Fiziksel Limitleri Koru
+        # Limitler
+        state["ph"] = max(0.0, min(14.0, state["ph"]))
         state["chamber_humidity"] = max(0.0, min(100.0, state["chamber_humidity"]))
         
         current_row_index += 1
-        await asyncio.sleep(1) # Saniyede 1 dakika (satır) atlar
+        await asyncio.sleep(1)
 
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(physics_loop())
 
 @app.get("/api/sensors")
-def get_data():
-    return state
+def get_data(): return state
 
 class Command(BaseModel):
     device: str
@@ -131,9 +114,6 @@ class Command(BaseModel):
 
 @app.post("/api/device")
 def control_device(cmd: Command):
-    if state["system_status"] != "AKTIF":
-        return {"status": "error", "message": "Sistem çöktü."}
-        
     if cmd.device in devices:
         devices[cmd.device] = cmd.action
         return {"status": "success"}

@@ -1,59 +1,18 @@
-// --- NODE-RED WEBSOCKET BAĞLANTISI ---
-// Node-RED varsayılan olarak 1880 portunda çalışır
-const ws = new WebSocket('ws://localhost:1880/ws/telemetry');
-
-ws.onopen = function() {
-    console.log("Node-RED'e başarıyla bağlanıldı!");
-    const statusEl = document.getElementById('connection-status');
-    statusEl.textContent = "Node-RED Canlı Veri (NASA VEG-01C)";
-    statusEl.className = "status-online";
-    logTerminal("Sistem Çevrimiçi: NASA Telemetri verisi alınıyor...", "normal");
-};
-
-ws.onmessage = function(event) {
-    // Node-RED'den saniyede 2 kez gelen veriyi yakala
-    const data = JSON.parse(event.data);
-    
-    // OTONOM ZEKA (Sisteminizi koruyan kriz yönetimi)
-    if (data.waterTemp > 24.5) {
-        document.getElementById('status-chiller').className = "badge badge-active";
-        document.getElementById('status-chiller').innerText = "SOĞUTUYOR";
-        logTerminal("Kritik Sıcaklık (" + data.waterTemp + "°C) ! Chiller devrede.", "warn");
-    } else {
-        document.getElementById('status-chiller').className = "badge badge-standby";
-        document.getElementById('status-chiller').innerText = "BEKLEMEDE";
-    }
-
-    // Arayüzü gelen bu gerçek NASA verisiyle güncelle
-    updateUI(data);
-};
-
-ws.onerror = function(error) {
-    console.error("WebSocket Hatası: ", error);
-    const statusEl = document.getElementById('connection-status');
-    statusEl.textContent = "Node-RED Bekleniyor...";
-    statusEl.className = "status-offline";
-};
-
-ws.onclose = function() {
-    logTerminal("Sistem Uyarısı: Node-RED bağlantısı kesildi.", "crit");
-};
-// 1. GRAFİK KURULUMU (Su Sıcaklığı ve pH)
 const ctx = document.getElementById('hydroChart').getContext('2d');
 const hydroChart = new Chart(ctx, {
     type: 'line',
     data: {
         labels: [],
         datasets: [
-            { label: 'Kabin Sıcaklığı (°C)', borderColor: '#f87171', data: [], tension: 0.4, yAxisID: 'y' },
-            { label: 'Kabin Nemi (%)', borderColor: '#38bdf8', data: [], tension: 0.4, yAxisID: 'y1' }
+            { label: 'Su Sıcaklığı (°C)', borderColor: '#f87171', data: [], tension: 0.4 },
+            { label: 'pH Seviyesi', borderColor: '#a78bfa', data: [], tension: 0.4, yAxisID: 'y1' }
         ]
     },
     options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         scales: {
-            y: { type: 'linear', display: true, position: 'left', min: 15, max: 30, title: { display: true, text: 'Sıcaklık' } },
-            y1: { type: 'linear', display: true, position: 'right', min: 20, max: 100, title: { display: true, text: 'Nem' } }
+            y: { type: 'linear', display: true, position: 'left', min: 18, max: 28, title: { display: true, text: 'Sıcaklık (°C)' } },
+            y1: { type: 'linear', display: true, position: 'right', min: 4, max: 9, title: { display: true, text: 'pH' } }
         },
         plugins: { legend: { labels: { color: '#f8fafc' } } }
     }
@@ -67,33 +26,29 @@ function logTerminal(msg, type = 'normal') {
     term.scrollTop = term.scrollHeight;
 }
 
-// 2. PYTHON API ENTEGRASYONU
 async function fetchHydroData() {
     try {
+        // Python API'sinden Gerçek Veriyi Çekiyoruz!
         const response = await fetch('http://localhost:8000/api/sensors');
         if (!response.ok) throw new Error('API Hatası');
-        
         let simData = await response.json(); 
         
-        document.getElementById('connection-status').textContent = "Simülasyona Bağlı";
+        document.getElementById('connection-status').textContent = `Uzay Saati: ${simData.current_time} | Node.js/Python'a Bağlı`;
         document.getElementById('connection-status').className = "status-online";
 
-        // Arayüzü Güncelle
-        document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
-        document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
-        document.getElementById('val-water').textContent = simData.water_tank_liters.toFixed(2) + " L";
-        document.getElementById('val-biomass').textContent = simData.plant_biomass_kg.toFixed(4) + " kg";
-        
-        document.getElementById('nasa-time').textContent = simData.current_time;
-        document.getElementById('sys-status').textContent = simData.system_status;
+        // Arayüz Değerlerini Güncelle
+        document.getElementById('val-watertemp').textContent = simData.water_temp.toFixed(1) + " °C";
+        document.getElementById('val-ph').textContent = simData.ph.toFixed(2);
+        document.getElementById('val-ec').textContent = simData.ec.toFixed(1) + " mS/cm";
+        document.getElementById('val-do').textContent = simData.do.toFixed(1) + " mg/L";
 
-        // Grafiğe Veri Ekle
+        // Grafiği Güncelle
         const now = new Date().toLocaleTimeString();
         hydroChart.data.labels.push(now);
-        hydroChart.data.datasets[0].data.push(simData.chamber_temperature);
-        hydroChart.data.datasets[1].data.push(simData.chamber_humidity);
+        hydroChart.data.datasets[0].data.push(simData.water_temp);
+        hydroChart.data.datasets[1].data.push(simData.ph);
 
-        if (hydroChart.data.labels.length > 20) {
+        if (hydroChart.data.labels.length > 15) {
             hydroChart.data.labels.shift();
             hydroChart.data.datasets[0].data.shift();
             hydroChart.data.datasets[1].data.shift();
@@ -101,37 +56,28 @@ async function fetchHydroData() {
         hydroChart.update();
 
     } catch (error) {
-        console.error(error);
         document.getElementById('connection-status').textContent = "Sunucu Bekleniyor...";
         document.getElementById('connection-status').className = "status-offline";
     }
 }
 
-// 3. IOT CİHAZ KONTROLÜ (POST REQUEST)
-async function toggleDevice(deviceName, actionState) {
-    try {
-        await fetch("http://localhost:8000/api/device", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ device: deviceName, action: actionState })
-        });
-        
-        logTerminal(`MANUEL KONTROL: ${deviceName} durumu ${actionState ? 'AÇIK' : 'KAPALI'} yapıldı.`, actionState ? "warn" : "normal");
-        
-        // Arayüz Badge Güncelleme
-        const badgeId = deviceName === 'ventilation_fan' ? 'status-fan' : (deviceName === 'aerogel_collector' ? 'status-aerogel' : 'status-pump');
-        const badge = document.getElementById(badgeId);
-        if (actionState) {
-            badge.className = "badge badge-active";
-            badge.innerText = "AKTİF";
-        } else {
-            badge.className = "badge badge-standby";
-            badge.innerText = "BEKLEMEDE";
-        }
-    } catch (err) {
-        logTerminal("Cihaz kontrol hatası! Sunucuya ulaşılamıyor.", "crit");
-    }
+// Jüri için Manuel Test Fonksiyonları (Python'a Komut Gönderir)
+async function triggerDevice(device, action) {
+    await fetch("http://localhost:8000/api/device", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device: device, action: action })
+    });
 }
 
-// Saniyede bir verileri çek
+function triggerHeatSpike() {
+    triggerDevice("chiller", false);
+    logTerminal("MANUEL MÜDAHALE: Chiller kapatıldı, su ısınmaya bırakıldı!", "crit");
+}
+
+function triggerPhSpike() {
+    triggerDevice("ph_doser", false);
+    logTerminal("MANUEL MÜDAHALE: pH Doser kapatıldı, asit baz dengesizleşiyor!", "crit");
+}
+
 setInterval(fetchHydroData, 1000);
