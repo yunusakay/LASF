@@ -1,4 +1,4 @@
-# Low Atmosphare Satallite Farming
+Low Atmosphare Satallite Farming
 GÖREVİMİZ
 Alçak dünya yörüngesindeki bir uydu formatındaki üreticilik ve süldürülebilirlikte yüksek verimli bitkisel bir sistem yapısı ve sürdürülen bir teknoloji projesinin yazılımı ve basit bağlantılarını tasarlamak
 
