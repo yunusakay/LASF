@@ -357,3 +357,20 @@ h1 {
     font-size: 16px;
     color: #cbd5e1;
 }
+
+/* --- KIRMIZI ALARM EFEKTİ --- */
+body.red-alert-mode {
+    animation: dangerPulse 1.5s infinite;
+}
+
+@keyframes dangerPulse {
+    0% { box-shadow: inset 0 0 0px rgba(239, 68, 68, 0); }
+    50% { box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.6); }
+    100% { box-shadow: inset 0 0 0px rgba(239, 68, 68, 0); }
+}
+
+/* Alarm durumundayken Ana Başlığı da kırmızı yapalım */
+body.red-alert-mode h1 {
+    color: #ef4444;
+    text-shadow: 0 0 20px #ef4444;
+}

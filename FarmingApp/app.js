@@ -70,7 +70,12 @@ ws.onmessage = function (event) {
     }
 
     // Node-RED'deki otonom mantığın arayüze yansıması
-    updateBadge('status-fan', data.chamber_temperature > 24.5, 'ÇALIŞIYOR');
+    // EKRAN KIRMIZI ALARM YÖNETİMİ
+    if (data.chamber_temperature > 24.5) {
+        document.body.classList.add('red-alert-mode'); // Ekranı kırmızı parlat
+    } else {
+        document.body.classList.remove('red-alert-mode'); // Normale dön
+    }
     updateBadge('status-dehumidifier', data.chamber_humidity > 60.0, 'SU TOPLUYOR');
     updateBadge('status-npk', data.ai_recommendation.includes("Ekle"), 'DOZLUYOR');
 
