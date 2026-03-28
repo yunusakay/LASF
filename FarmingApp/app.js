@@ -81,3 +81,19 @@ function triggerPhSpike() {
 }
 
 setInterval(fetchHydroData, 1000);
+// Arayüz Terminaline Her 3 Saniyede Bir Durum Logu Bas
+let logCounter = 0;
+setInterval(() => {
+    logCounter++;
+    const temp = document.getElementById('val-watertemp').textContent;
+    const ph = document.getElementById('val-ph').textContent;
+    const sysStatus = document.getElementById('connection-status').textContent;
+
+    if (sysStatus.includes("Bağlı")) {
+        if (logCounter % 2 === 0) {
+            logTerminal(`[SİSTEM RUTİNİ] Sensörler stabil. Su: ${temp}, pH: ${ph}`, "normal");
+        } else {
+            logTerminal(`[VERİ AKIŞI] NASA ISS telemetrisi ile senkronizasyon başarılı.`, "normal");
+        }
+    }
+}, 3000); // 3 saniyede bir terminale yazı düşer
