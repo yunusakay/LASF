@@ -75,10 +75,10 @@ h1 {
 .chart-box,
 .hardware-box {
     background: rgba(30, 41, 59, 0.4);
-    /* Yarı saydam arka plan */
-    backdrop-filter: blur(12px);
     /* Arkadaki uzay boşluğunu bulanıklaştırır */
     -webkit-backdrop-filter: blur(12px);
+    /* Yarı saydam arka plan */
+    backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     /* İnce cam kenarlığı */
     border-radius: 12px;
