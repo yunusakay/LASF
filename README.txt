@@ -1,46 +1,46 @@
+================================================================================
 Low Atmosphere Satellite Farming (LASF)
 NASA ISS Telemetrisi Destekli Otonom Uzay Tarımı ve Kapalı Döngü Yaşam Destek Sistemi
+Sürüm: 2.0 (Final)
+================================================================================
 
 🎯 GÖREVİMİZ
-Alçak Dünya Yörüngesindeki (LEO) bir uydu veya uzay istasyonu modülü içinde, bitkisel üretkenliği ve sürdürülebilirliği maksimize eden tam otonom bir "Software-in-the-Loop (SITL)" dijital ikiz tasarlamak. Sistemimiz, gerçek NASA ISS telemetri verilerini kullanarak kapalı döngü (closed-loop) su geri kazanımı ve yapay zeka destekli mineral yönetimi sağlar.
+Alçak Dünya Yörüngesindeki (LEO) bir uydu veya uzay istasyonu modülü içinde, bitkisel üretkenliği ve su verimliliğini maksimize eden tam otonom bir "Software-in-the-Loop (SITL)" dijital ikiz tasarlamak. Sistemimiz, gerçek NASA ISS VEG-01C (Zinnia) telemetri verilerini referans alarak çalışır.
 
 ⚠️ ÇÖZÜLEN SORUNLAR (Odak Noktalarımız)
-İlk planlarımızda yer alan radyasyon yönetimi kapsam dışı bırakılmış olup, uzay tarımının en kritik 3 sorununa odaklanılmıştır:
+Uzay tarımının en kritik 3 sorununa odaklanılmıştır:
+1. Su Kıtlığı ve İsrafı: Bitki terlemesiyle (transpirasyon) havaya karışan suyun uzayda kaybolması.
+2. Kapalı Ortam İklimlendirmesi: ISS ortamındaki tehlikeli nem ve sıcaklık dalgalanmaları (2 Astronotun ortama yaydığı vücut ısısı ve solunum nemi dahil edilerek modellenmiştir).
+3. Besin (Mineral) Yönetimi: Kısıtlı kaynaklarla hangi bitkinin ne zaman ekileceğinin bilinmemesi ve NPK toksisitesi.
 
-Su Kıtlığı ve İsrafı: Bitki terlemesiyle (transpirasyon) havaya karışan suyun uzayda kaybolması.
+⚙️ GELİŞTİRİLEN TEKNOLOJİLER VE ALGORİTMALAR
+Projenin ana omurgasını oluşturan yenilikçi yazılım ve donanım mimarileri:
 
-Kapalı Ortam İklimlendirmesi: ISS ortamındaki tehlikeli nem (%66 üzeri) ve sıcaklık dalgalanmaları.
+1. Biyolojik Stres ve Su Verimliliği Algoritması (YENİ)
+Sistemimiz, bitkilerin terleme oranlarını (VPD) analiz ederek su tasarrufu sağlamak için kontrollü stres uygular:
+- Marul (Işık Stresi): Işık şiddeti (PPFD) düşürülür ve Mavi Işık oranı artırılarak yaprakların kalınlaşması, böylece yüzey alanından kaybedilen suyun azaltılması sağlanır.
+- Patates (Ozmotik Stres): Hidroponik suyunun EC (İletkenlik) değeri artırılarak bitkinin suyu yapraklara değil, yüksek kalorili yumrularına (patatese) yönlendirmesi sağlanır.
 
-Besin (Mineral) Yönetimi: Kısıtlı kaynaklarla hangi bitkinin ne zaman ekileceğinin bilinmemesi.
+2. Yapay Zeka NPK Ekim Öneri Motoru
+Hidroponik suyundaki Azot (N), Fosfor (P) ve Potasyum (K) miktarlarını anlık (0-250 ppm sınırlarında) analiz ederek o anki su profiline en uygun bitkiyi astronotlara öneren karar destek algoritması.
 
-⚙️ GELİŞTİRİLEN TEKNOLOJİLER (Yeni Planlar)
-"Belki" aşamasında olan fikirlerimiz, sistemin ana omurgası olarak hayata geçirilmiştir:
+3. Otonom İklim Zekası ve Su Hasadı (Dehumidifier)
+Simülasyon motoru; kabin sıcaklığı 26°C'yi aştığında soğutucu fanları, nem oranı %60'ı aştığında ise Nem Toplayıcıyı (Dehumidifier) otonom olarak devreye sokar. Havadaki tehlikeli nem emilerek sıvı suya dönüştürülür ve su tankına geri kazandırılır.
 
-Atmosferik Su Hasadı (Dehumidifier/Eski adıyla Aerogel): Havadaki tehlikeli nemi emerek sıvı suya dönüştüren ve su tankına geri kazandıran otonom geri dönüşüm sistemi.
-
-Yapay Zeka NPK Ekim Öneri Motoru: Hidroponik suyundaki Azot (N), Fosfor (P) ve Potasyum (K) miktarlarını anlık analiz ederek o anki su profiline en uygun bitkiyi (Marul, Çilek veya Patates) astronotlara öneren karar destek algoritması.
-
-Otonom İklim Zekası: Node-RED tabanlı çalışan; pH, sıcaklık ve nem sensörlerini okuyarak Fan, Chiller (Soğutucu) ve Asit Pompalarını insan müdahalesi olmadan tetikleyen beyin.
-
-🛠️ HİZMETLER VE ÇIKTILAR
-Sürdürülebilir Gıda: Kendi kendine yeten taze karbonhidrat ve vitamin kaynağı.
-
-Geri Dönüştürülmüş Su: Nem hasadı ile sıfır su israfı.
-
-Oksijen Üretimi: Fotosentez yoluyla kapalı kabin hava kalitesine destek.
-
-Psikolojik Terapi: Astronotların uzun uzay görevlerinde bitkilerle ilgilenerek mental sağlıklarını korumaları.
-
-🌍 NEDEN UZAY TARIMCILIĞI?
-İnsan biyolojisi ve psikolojisi, Dünya'nın bitki örtüsüyle birlikte evrimleşmiştir. Derin uzay görevleri ve yörünge istasyonları, lojistik olarak Dünya'dan sürekli gıda ikmali alamazlar. Kendi yiyeceğimizi üretmek sadece biyolojik bir hayatta kalma zorunluluğu değil, aynı zamanda kapalı ve karanlık uzay ortamında astronotların ruh sağlığını (terapi) korumak için kritik bir ihtiyaçtır.
+4. Digital Twin Validation (Dijital İkiz Doğrulaması)
+Sistemimiz "compare.html" sayfası üzerinden, uyguladığımız otonom müdahalelerin ve 2 astronotun yarattığı etkinin, orijinal NASA ISS telemetri verileriyle (Zinnia bitkisi kontrol grubu) anlık karşılaştırmasını ve doğrulamasını sunar.
 
 🌱 SİSTEM EKOSİSTEMİ (3'lü Döngü)
 Sistemimiz mineral tüketim profillerine göre 3 ana bitki üzerinden optimize edilmiştir:
+- Marul (Lettuce): Yüksek Azot (N) tüketici. Hızlı yetişen yapraklı yeşillik. Işık stresi ile su verimliliği sağlanır.
+- Patates (Potato): Yüksek Potasyum (K) tüketici. Temel karbonhidrat ve yüksek kalori kaynağı. Ozmotik stres ile yumru gelişimi maksimize edilir.
+- Çilek / Soya (Strawberry/Soybean): Dengeli Fosfor (P) tüketici.
 
-Marul (Lettuce): Yüksek Azot (N) tüketici. Hızlı yetişen yapraklı yeşillik.
+🚀 NASIL ÇALIŞTIRILIR?
+1. Backend (Fizik Motoru): Terminal veya PowerShell üzerinden `simulation.py` dosyasını çalıştırın. (Örn: `python PhysicSimulation/simulation.py`)
+   - Sunucu `http://127.0.0.1:8000` adresinde 80.388 satırlık NASA verisiyle ayağa kalkacaktır.
+2. Ana Kontrol Paneli: Tarayıcınızda `FarmingApp/index.html` dosyasını açarak otonom sistemleri, NPK durumunu ve stres fazlarını canlı izleyin.
+3. NASA Doğrulama Ekranı: Tarayıcınızda `FarmingApp/compare.html` dosyasını açarak fizik motorumuzun gerçek uzay verileriyle olan matematiksel karşılaştırmasını jüriye sunun.
 
-Çilek (Strawberry): Dengeli Fosfor (P) tüketici. Astronot morali için tatlı meyve kaynağı.
-
-Patates (Potato): Yüksek Potasyum (K) tüketici. Temel karbonhidrat ve yüksek kalori (yumru) kaynağı.
-
-Not: Bu proje, NASA VEG-01C (Zinnia) görevine ait gerçek ISS telemetri veri setleri (Sıcaklık ve Nem) referans alınarak kalibre edilmiştir.
+🌍 NEDEN UZAY TARIMCILIĞI?
+İnsan biyolojisi ve psikolojisi, Dünya'nın bitki örtüsüyle birlikte evrimleşmiştir. Derin uzay görevleri, Dünya'dan sürekli gıda ikmali alamazlar. Kendi yiyeceğimizi üretmek sadece biyolojik bir hayatta kalma zorunluluğu değil, aynı zamanda kapalı uzay ortamında astronotların ruh sağlığını korumak için kritik bir ihtiyaçtır.
