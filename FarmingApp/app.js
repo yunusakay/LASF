@@ -312,3 +312,41 @@ logTerminal('Python NPK Motoruna bağlanılıyor...');
 
 fetchAndUpdate();
 setInterval(fetchAndUpdate, POLL_INTERVAL);
+
+// Arayüzden bitki değiştirildiğinde ikonu anında günceller
+window.updateCropIcon = function(slotIndex) {
+    const val = document.getElementById(`crop-select-${slotIndex}`).value;
+    const iconEl = document.getElementById(`crop-icon-${slotIndex}`);
+    if (val === 'marul') iconEl.textContent = '🥬';
+    else if (val === 'patates') iconEl.textContent = '🥔';
+    else if (val === 'soya') iconEl.textContent = '🌱';
+};
+
+// --- BİYOLOJİK ALAN (SEÇİLİ BİTKİYE GÖRE GÖRSEL BAR) ---
+    for(let i=1; i<=4; i++) {
+        const selectEl = document.getElementById(`crop-select-${i}`);
+        if(!selectEl) continue;
+        
+        const selectedCrop = selectEl.value;
+        let growth = 0;
+        let color = "#64748b";
+
+        // Bitkinin türüne göre barın doluluk oranı (Görsel Şov)
+        if (selectedCrop === 'marul') {
+            growth = Math.min(100, data.chamber_humidity * 0.85); // Marul neme tepki verir
+            color = "#4ade80"; // Yeşil
+        } else if (selectedCrop === 'patates') {
+            growth = Math.min(100, (data.mineral_k / 250) * 100); // Patates Potasyuma tepki verir
+            color = "#fbbf24"; // Sarı
+        } else if (selectedCrop === 'soya') {
+            growth = Math.min(100, (data.mineral_n / 200) * 100); // Soya Azota tepki verir
+            color = "#38bdf8"; // Mavi
+        }
+
+        const progEl = document.getElementById(`crop-prog-${i}`);
+        if(progEl) {
+            progEl.style.width = `${growth}%`;
+            progEl.style.background = color;
+            progEl.style.boxShadow = `0 0 10px ${color}`;
+        }
+    }
