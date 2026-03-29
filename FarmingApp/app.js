@@ -5,32 +5,62 @@
 
 'use strict';
 
-const API_BASE      = 'http://127.0.0.1:8000';
+const API_BASE = 'http://127.0.0.1:8000';
 const POLL_INTERVAL = 1000;
-const CHART_WINDOW  = 60;
+const CHART_WINDOW = 60;
 
 const DEVICE_LABELS = {
     ventilation_fan: 'Havalandırma Fanı',
-    dehumidifier:    'Nem Toplayıcı',
-    chiller:         'Su Soğutucu',
-    ph_doser:        'pH Düzenleyici',
-    npk_doser:       'NPK Gübre Dozlayıcı',
+    dehumidifier: 'Nem Toplayıcı',
+    chiller: 'Su Soğutucu',
+    ph_doser: 'pH Düzenleyici',
+    npk_doser: 'NPK Gübre Dozlayıcı',
 };
 
 const STRESS_LABELS = {
-    NORMAL:         { text: 'NORMAL',        cls: 'badge-standby' },
-    LIGHT_STRESS:   { text: 'IŞIK STRESİ',   cls: 'badge-alert'   },
-    OSMOTIC_STRESS: { text: 'OZMOTİK STRES', cls: 'badge-alert'   },
-    RECOVERY:       { text: 'İYİLEŞME',      cls: 'badge-active'  },
+    NORMAL: { text: 'NORMAL', cls: 'badge-standby' },
+    LIGHT_STRESS: { text: 'IŞIK STRESİ', cls: 'badge-alert' },
+    OSMOTIC_STRESS: { text: 'OZMOTİK STRES', cls: 'badge-alert' },
+    RECOVERY: { text: 'İYİLEŞME', cls: 'badge-active' },
 };
 
 const CROP_COLORS = {
-    LETTUCE:    '#4ade80',
+    LETTUCE: '#4ade80',
     STRAWBERRY: '#f472b6',
-    POTATO:     '#fbbf24',
-    DEPLETED:   '#f87171',
-    NONE:       '#94a3b8',
+    POTATO: '#fbbf24',
+    DEPLETED: '#f87171',
+    NONE: '#94a3b8',
 };
+
+// --- 5. BİYOLOJİK ÜRETİM ALANINI GÜNCELLE ---
+// Eğer Python henüz crops verisini göndermiyorsa, sahte verilerle arayüzü çökmeden ayakta tutar.
+// --- 5. İNTERAKTİF BİYOLOJİK ALAN (SEÇİLİ BİTKİYE GÖRE HESAP) ---
+    for(let i=1; i<=4; i++) {
+        const selectedCrop = document.getElementById(`crop-select-${i}`).value;
+        let growth = 0;
+        let color = "#64748b"; // Varsayılan boş renk
+
+        // Hangi bitki seçiliyse, onun sevdiği veriye göre büyüme barı dolar
+        if (selectedCrop === 'marul') {
+            growth = Math.min(100, data.chamber_humidity * 0.85); // Marul nemi sever
+            color = "#4ade80"; // Yeşil
+        } else if (selectedCrop === 'patates') {
+            growth = Math.min(100, (data.mineral_k / 250) * 100); // Patates Potasyumu sever
+            color = "#fbbf24"; // Sarı
+        } else if (selectedCrop === 'soya') {
+            growth = Math.min(100, (data.mineral_n / 200) * 100); // Soya Azotu sever
+            color = "#38bdf8"; // Mavi
+        } else {
+            growth = 0; // Boş slot
+        }
+
+        // Barları ve renkleri dinamik olarak güncelle
+        document.getElementById(`crop-prog-${i}`).style.width = `${growth}%`;
+        document.getElementById(`crop-prog-${i}`).style.background = color;
+        document.getElementById(`crop-prog-${i}`).style.boxShadow = `0 0 10px ${color}`;
+        document.getElementById(`crop-val-${i}`).textContent = selectedCrop === 'bos' ? '--' : `%${growth.toFixed(1)}`;
+        document.getElementById(`crop-val-${i}`).style.color = color;
+    }
 
 // ---------------------------------------------------------------------------
 // CHARTS
@@ -59,9 +89,9 @@ const hydroChart = new Chart(document.getElementById('hydroChart').getContext('2
         responsive: true, maintainAspectRatio: false, animation: false,
         interaction: { mode: 'index', intersect: false },
         scales: {
-            x:  { ticks: { color: '#64748b', maxTicksLimit: 8, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-            y:  { type: 'linear', position: 'left',  min: 18, max: 30, title: { display: true, text: 'Sıcaklık (°C)', color: '#f87171' }, ticks: { color: '#f87171' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-            y1: { type: 'linear', position: 'right', min: 30, max: 95, title: { display: true, text: 'Nem (%)',       color: '#38bdf8' }, ticks: { color: '#38bdf8' }, grid: { drawOnChartArea: false } },
+            x: { ticks: { color: '#64748b', maxTicksLimit: 8, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { type: 'linear', position: 'left', min: 18, max: 30, title: { display: true, text: 'Sıcaklık (°C)', color: '#f87171' }, ticks: { color: '#f87171' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y1: { type: 'linear', position: 'right', min: 30, max: 95, title: { display: true, text: 'Nem (%)', color: '#38bdf8' }, ticks: { color: '#38bdf8' }, grid: { drawOnChartArea: false } },
         },
         plugins: { legend: { labels: { color: '#94a3b8', font: { size: 12 } } } },
     },
@@ -72,8 +102,8 @@ const npkChart = new Chart(document.getElementById('npkChart').getContext('2d'),
     data: {
         labels: [],
         datasets: [
-            { label: 'Azot N (ppm)',     borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.08)',  fill: false, data: [], tension: 0.4, pointRadius: 0 },
-            { label: 'Fosfor P (ppm)',   borderColor: '#fb923c', backgroundColor: 'rgba(251,146,60,0.08)',  fill: false, data: [], tension: 0.4, pointRadius: 0 },
+            { label: 'Azot N (ppm)', borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.08)', fill: false, data: [], tension: 0.4, pointRadius: 0 },
+            { label: 'Fosfor P (ppm)', borderColor: '#fb923c', backgroundColor: 'rgba(251,146,60,0.08)', fill: false, data: [], tension: 0.4, pointRadius: 0 },
             { label: 'Potasyum K (ppm)', borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)', fill: false, data: [], tension: 0.4, pointRadius: 0 },
         ],
     },
@@ -98,8 +128,8 @@ function logTerminal(msg, type = 'normal') {
     const term = document.getElementById('terminal');
     if (!term) return;
     const entry = document.createElement('div');
-    const time  = new Date().toLocaleTimeString('tr-TR');
-    entry.className   = type === 'warn' ? 'log-warn' : type === 'crit' ? 'log-crit' : '';
+    const time = new Date().toLocaleTimeString('tr-TR');
+    entry.className = type === 'warn' ? 'log-warn' : type === 'crit' ? 'log-crit' : '';
     entry.textContent = `> [${time}] ${msg}`;
     term.appendChild(entry);
     while (term.children.length > MAX_TERMINAL_LINES) term.removeChild(term.firstChild);
@@ -114,13 +144,13 @@ function setBadge(id, isActive) {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = isActive ? 'AKTİF' : 'BEKLEMEDE';
-    el.className   = `badge ${isActive ? 'badge-active' : 'badge-standby'}`;
+    el.className = `badge ${isActive ? 'badge-active' : 'badge-standby'}`;
 }
 
 function setNpkBar(id, value, max = 200) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.style.width      = Math.min(100, Math.max(0, (value / max) * 100)).toFixed(1) + '%';
+    el.style.width = Math.min(100, Math.max(0, (value / max) * 100)).toFixed(1) + '%';
     el.style.background = value < 40 ? '#f87171' : value < 80 ? '#fbbf24' : '#4ade80';
 }
 
@@ -143,8 +173,8 @@ function pushChart(chart, label, ...values) {
 // STATE CHANGE TRACKING
 // ---------------------------------------------------------------------------
 
-let _prevCrop    = null;
-let _prevStress  = null;
+let _prevCrop = null;
+let _prevStress = null;
 let _prevDevices = {};
 
 function _logChanges(data) {
@@ -187,13 +217,13 @@ async function fetchAndUpdate() {
         const statusEl = document.getElementById('connection-status');
         if (statusEl) {
             statusEl.textContent = `Uzay Saati: ${d.current_time} | Bağlı`;
-            statusEl.className   = 'status-online';
+            statusEl.className = 'status-online';
         }
 
-        setText('val-temp',  d.chamber_temperature.toFixed(1) + ' °C');
-        setText('val-hum',   d.chamber_humidity.toFixed(1) + ' %');
+        setText('val-temp', d.chamber_temperature.toFixed(1) + ' °C');
+        setText('val-hum', d.chamber_humidity.toFixed(1) + ' %');
         setText('val-water', d.water_tank_liters.toFixed(1) + ' L');
-        setText('val-ph',    d.ph.toFixed(2));
+        setText('val-ph', d.ph.toFixed(2));
 
         const waterEl = document.getElementById('val-water');
         if (waterEl)
@@ -208,17 +238,17 @@ async function fetchAndUpdate() {
 
         const aiEl = document.getElementById('ai-status');
         if (aiEl) {
-            const color       = CROP_COLORS[d.ai_crop] || '#a78bfa';
-            aiEl.textContent  = d.ai_recommendation;
-            aiEl.style.color  = color;
+            const color = CROP_COLORS[d.ai_crop] || '#a78bfa';
+            aiEl.textContent = d.ai_recommendation;
+            aiEl.style.color = color;
             aiEl.style.textShadow = `0 0 12px ${color}`;
         }
 
         const stressInfo = STRESS_LABELS[d.stress_phase] || STRESS_LABELS['NORMAL'];
-        const stressEl   = document.getElementById('status-stress');
+        const stressEl = document.getElementById('status-stress');
         if (stressEl) {
             stressEl.textContent = stressInfo.text;
-            stressEl.className   = `badge ${stressInfo.cls}`;
+            stressEl.className = `badge ${stressInfo.cls}`;
         }
 
         const vpdEl = document.getElementById('val-vpd');
@@ -227,19 +257,19 @@ async function fetchAndUpdate() {
             vpdEl.style.color = d.vpd_kpa < 0.4 ? '#f87171' : d.vpd_kpa < 0.8 ? '#fbbf24' : d.vpd_kpa <= 1.2 ? '#4ade80' : d.vpd_kpa <= 1.6 ? '#fbbf24' : '#f87171';
         }
 
-        setText('val-harvested',     d.water_harvested_total.toFixed(1) + ' L');
-        setText('val-npk-doses',     d.npk_doses_given);
+        setText('val-harvested', d.water_harvested_total.toFixed(1) + ' L');
+        setText('val-npk-doses', d.npk_doses_given);
         setText('val-stress-cycles', d.stress_cycles_completed);
-        setText('val-ppfd',          d.light_ppfd.toFixed(0) + ' μmol/m²/s');
-        setText('val-ec',            d.ec.toFixed(2) + ' mS/cm');
-        setText('nasa-time',         d.current_time);
+        setText('val-ppfd', d.light_ppfd.toFixed(0) + ' μmol/m²/s');
+        setText('val-ec', d.ec.toFixed(2) + ' mS/cm');
+        setText('nasa-time', d.current_time);
 
         if (d.devices) {
-            setBadge('status-fan',          d.devices.ventilation_fan);
+            setBadge('status-fan', d.devices.ventilation_fan);
             setBadge('status-dehumidifier', d.devices.dehumidifier);
-            setBadge('status-chiller',      d.devices.chiller);
-            setBadge('status-ph',           d.devices.ph_doser);
-            setBadge('status-npk',          d.devices.npk_doser);
+            setBadge('status-chiller', d.devices.chiller);
+            setBadge('status-ph', d.devices.ph_doser);
+            setBadge('status-npk', d.devices.npk_doser);
         }
 
         document.body.classList.toggle('red-alert-mode',
@@ -248,7 +278,7 @@ async function fetchAndUpdate() {
 
         const ts = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         pushChart(hydroChart, ts, d.chamber_temperature, d.chamber_humidity);
-        pushChart(npkChart,   ts, d.mineral_n, d.mineral_p, d.mineral_k);
+        pushChart(npkChart, ts, d.mineral_n, d.mineral_p, d.mineral_k);
 
         _logChanges(d);
 
@@ -256,7 +286,7 @@ async function fetchAndUpdate() {
         const statusEl = document.getElementById('connection-status');
         if (statusEl) {
             statusEl.textContent = 'Python Sunucusu Bekleniyor...';
-            statusEl.className   = 'status-offline';
+            statusEl.className = 'status-offline';
         }
         if (!_isFirstFetch) {
             logTerminal('BAĞLANTI KESİLDİ: Python sunucusuna ulaşılamıyor.', 'crit');
@@ -272,9 +302,9 @@ async function fetchAndUpdate() {
 async function toggleDevice(deviceName, actionState) {
     try {
         const res = await fetch(`${API_BASE}/api/device`, {
-            method:  'POST',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ device: deviceName, action: actionState }),
+            body: JSON.stringify({ device: deviceName, action: actionState }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         logTerminal(`MANUEL: ${DEVICE_LABELS[deviceName] || deviceName} → ${actionState ? 'AÇIK' : 'KAPALI'}`, actionState ? 'warn' : 'normal');
