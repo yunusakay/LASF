@@ -18,16 +18,14 @@ import uvicorn
 # SIMULATION CONSTANTS & HUMAN IMPACT
 # ---------------------------------------------------------------------------
 
-# VEG-01C Mission had 2 astronauts affecting the environment
-HUMANS_IN_CABIN = 2
-HUMAN_TEMP_RISE_PER_TICK = 0.03 * HUMANS_IN_CABIN  # Body heat radiation
-HUMAN_HUM_RISE_PER_TICK = 0.08 * HUMANS_IN_CABIN   # Respiration & sweat
+HUMANS_IN_CABIN           = 2
+HUMAN_TEMP_RISE_PER_TICK  = 0.03 * HUMANS_IN_CABIN
+HUMAN_HUM_RISE_PER_TICK   = 0.08 * HUMANS_IN_CABIN
 
 NPK_CONSUME_N, NPK_CONSUME_P, NPK_CONSUME_K = 0.15, 0.05, 0.12
 NPK_RESTOCK_LOW, NPK_RESTOCK_HIGH           = 40.0, 90.0
-NPK_DOSE_N, NPK_DOSE_P, NPK_DOSE_K          = 5.0, 2.0, 4.0
-
-NPK_MIN, NPK_MAX                            = 0.0, 250.0  # Safe mineral boundaries
+NPK_DOSE_N, NPK_DOSE_P, NPK_DOSE_K         = 5.0, 2.0, 4.0
+NPK_MIN, NPK_MAX                            = 0.0, 250.0
 
 PH_DRIFT_PER_TICK                          = 0.02
 PH_DOSE_PER_TICK                           = 0.10
@@ -54,7 +52,9 @@ OSMOTIC_STRESS_DURATION                    = 180
 # ---------------------------------------------------------------------------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CSV_PATH = os.path.join(BASE_DIR, "..", "IoTSimulation", "VEG-01C_EDA_Telemetry_data.csv")
+
+# DÜZELTİLDİ: CSV, simulation.py ile aynı klasörde
+CSV_PATH = os.path.join(BASE_DIR, "VEG-01C_EDA_Telemetry_data.csv")
 
 dataset: list[dict] = []
 
@@ -86,8 +86,8 @@ current_row_index: int = 0
 state: dict = {
     "iss_raw_temp":            23.0,
     "iss_raw_hum":             40.0,
-    "baseline_temp":           23.0, # Pure physics (No LASF solutions)
-    "baseline_hum":            50.0, # Pure physics (No LASF solutions)
+    "baseline_temp":           23.0,
+    "baseline_hum":            50.0,
     "current_time":            "Başlatılıyor...",
     "chamber_temperature":     23.0,
     "chamber_humidity":        50.0,
@@ -161,10 +161,8 @@ def _ctrl_water() -> None:
 # ---------------------------------------------------------------------------
 
 def _stress(crop: str, temp: float, hum: float) -> None:
-    # 1. Calculate Vapor Pressure Deficit (VPD)
     svp = 0.61078 * math.exp((17.27 * temp) / (temp + 237.3))
-    avp = svp * (hum / 100.0)
-    state["vpd_kpa"] = round(svp - avp, 3)
+    state["vpd_kpa"] = round(svp - svp * (hum / 100.0), 3)
 
     phase = state["stress_phase"]
 
@@ -187,18 +185,18 @@ def _stress(crop: str, temp: float, hum: float) -> None:
         state["ec"]                    += 0.05
         state["stress_duration_ticks"] += 1
         if state["ec"] >= 3.0 or state["stress_duration_ticks"] >= OSMOTIC_STRESS_DURATION:
-            devices["ec_doser"]    = False
-            state["stress_phase"]  = "RECOVERY"
+            devices["ec_doser"]   = False
+            state["stress_phase"] = "RECOVERY"
 
     elif phase == "RECOVERY":
         state["light_ppfd"]       = 400.0
         state["blue_light_ratio"] = 20.0
         if state["ec"] > 1.8:
-            state["ec"]                  -= 0.1
-            state["water_tank_liters"]   += 0.5
+            state["ec"]                -= 0.1
+            state["water_tank_liters"] += 0.5
         if state["ec"] <= 2.0:
-            state["stress_phase"]              = "NORMAL"
-            state["stress_cycles_completed"]   += 1
+            state["stress_phase"]            = "NORMAL"
+            state["stress_cycles_completed"] += 1
 
 def _ai_recommend() -> None:
     n, p, k = state["mineral_n"], state["mineral_p"], state["mineral_k"]
@@ -226,23 +224,20 @@ async def physics_loop() -> None:
             current_row_index = 0
 
         row = dataset[current_row_index]
-        # --- RAW NASA DATA & BASELINE PHYSICS ---
         state["iss_raw_temp"] = row["iss_temp"]
         state["iss_raw_hum"]  = row["iss_hum"]
-        
-        # Baseline: Zinnia plant normal transpiration + 2 Humans
-        # (NO smart fans, NO dehumidifiers, NO AI stress)
+
+        # Baseline: bitkisel transpirasyon + 2 insan (LASF sistemi yok)
         state["baseline_hum"]  += HUM_RISE_NORMAL + HUMAN_HUM_RISE_PER_TICK
         state["baseline_temp"] += TEMP_RISE_PER_TICK + HUMAN_TEMP_RISE_PER_TICK
-        
-        # Natural leakage/dissipation in the ISS module to prevent infinite growth
-        state["baseline_hum"] += (row["iss_hum"] - state["baseline_hum"]) * 0.05
+        state["baseline_hum"]  += (row["iss_hum"]  - state["baseline_hum"])  * 0.05
         state["baseline_temp"] += (row["iss_temp"] - state["baseline_temp"]) * 0.05
+
         state["current_time"]          = row["time"]
         state["mission_elapsed_ticks"] += 1
         state["alerts"]                = []
 
-        # --- SİMBİYOTİK EKOSİSTEM MİNERAL DÖNGÜSÜ ---
+        # Mineral tüketimi
         state["mineral_n"] -= NPK_CONSUME_N
         state["mineral_p"] -= NPK_CONSUME_P
         state["mineral_k"] -= NPK_CONSUME_K
@@ -254,14 +249,11 @@ async def physics_loop() -> None:
         _stress(state["ai_crop"], state["chamber_temperature"], state["chamber_humidity"])
 
         in_stress = state["stress_phase"] in ("LIGHT_STRESS", "OSMOTIC_STRESS")
-        
-        # Human impact is added here!
-        state["chamber_humidity"]  += (HUM_RISE_STRESS if in_stress else HUM_RISE_NORMAL) + HUMAN_HUM_RISE_PER_TICK
+        state["chamber_humidity"]    += (HUM_RISE_STRESS if in_stress else HUM_RISE_NORMAL) + HUMAN_HUM_RISE_PER_TICK
         state["chamber_temperature"] += TEMP_RISE_PER_TICK + HUMAN_TEMP_RISE_PER_TICK
-        
-        state["water_tank_liters"] -= WATER_CONSUME_STRESS if in_stress else WATER_CONSUME_NORMAL
-        state["ph"] += PH_DRIFT_PER_TICK
-        
+        state["water_tank_liters"]   -= WATER_CONSUME_STRESS if in_stress else WATER_CONSUME_NORMAL
+        state["ph"]                  += PH_DRIFT_PER_TICK
+
         if state["water_temp"] < state["chamber_temperature"]:
             state["water_temp"] += 0.05
 
@@ -279,12 +271,10 @@ async def physics_loop() -> None:
             state["water_tank_liters"]     += WATER_DEHUMIDIFY_HARVEST
             state["water_harvested_total"] += WATER_DEHUMIDIFY_HARVEST
 
-        if devices["chiller"]:
-            state["water_temp"] -= 0.3
-        if devices["ph_doser"]:
-            state["ph"] -= PH_DOSE_PER_TICK
+        if devices["chiller"]:  state["water_temp"] -= 0.3
+        if devices["ph_doser"]: state["ph"]         -= PH_DOSE_PER_TICK
 
-        # Clamp (Sınırlandırmalar - NPK MAX eklendi)
+        # Clamp
         state["mineral_n"]             = _clamp(state["mineral_n"], NPK_MIN, NPK_MAX)
         state["mineral_p"]             = _clamp(state["mineral_p"], NPK_MIN, NPK_MAX)
         state["mineral_k"]             = _clamp(state["mineral_k"], NPK_MIN, NPK_MAX)
@@ -294,6 +284,7 @@ async def physics_loop() -> None:
         state["chamber_temperature"]   = _clamp(state["chamber_temperature"], 15.0, 40.0)
         state["water_temp"]            = _clamp(state["water_temp"], 10.0, 35.0)
         state["ec"]                    = _clamp(state["ec"], 0.5, 4.0)
+        state["water_harvested_total"] = round(state["water_harvested_total"], 2)
 
         print(
             f"[{state['current_time']}] "
