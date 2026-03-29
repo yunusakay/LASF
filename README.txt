@@ -15,7 +15,7 @@ Besin (Mineral) Yönetimi: Kısıtlı kaynaklarla hangi bitkinin ne zaman ekilec
 
 <<<<<<< HEAD
 EKOSISTEM
-Patates, marul, cilek. Karpuz Kavun
+Patates, marul, cilek.
 =======
 ⚙️ GELİŞTİRİLEN TEKNOLOJİLER (Yeni Planlar)
 "Belki" aşamasında olan fikirlerimiz, sistemin ana omurgası olarak hayata geçirilmiştir:
