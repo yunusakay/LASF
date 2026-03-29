@@ -140,13 +140,28 @@ function logTerminal(msg, type = 'normal') {
 // UI HELPERS
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// UI HELPERS
+// ---------------------------------------------------------------------------
+
 function setBadge(id, isActive) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.textContent = isActive ? 'AKTİF' : 'BEKLEMEDE';
-    el.className = `badge ${isActive ? 'badge-active' : 'badge-standby'}`;
+    
+    el.textContent = isActive ? 'ÇALIŞIYOR' : 'BEKLEMEDE';
+    el.className   = `badge ${isActive ? 'badge-active' : 'badge-standby'}`;
+    
+    // Çalışıyorsa Fosforlu Yeşil, Bekliyorsa Gri olsun
+    if(isActive) { 
+        el.style.background = "#4ade80"; 
+        el.style.color = "#000"; 
+        el.style.boxShadow = "0 0 10px #4ade80"; // Havalı parlama efekti
+    } else { 
+        el.style.background = "#334155"; 
+        el.style.color = "#94a3b8"; 
+        el.style.boxShadow = "none";
+    }
 }
-
 function setNpkBar(id, value, max = 200) {
     const el = document.getElementById(id);
     if (!el) return;
