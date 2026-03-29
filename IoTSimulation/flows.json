@@ -1,28 +1,31 @@
 [
     {
+        "id": "tab_main",
+        "type": "tab",
+        "label": "KOTA Otonom Kontrol",
+        "disabled": false,
+        "info": "LASF - Low Atmosphere Satellite Farming\nKOTA Autonomous Climate & Nutrient Controller\nPolls FastAPI physics engine every 1 second and issues corrective device commands."
+    },
+    {
         "id": "trigger_loop",
         "type": "inject",
-        "z": "bbbeb38bf0287061",
-        "name": "Saniyede 1 Kontrol",
+        "z": "tab_main",
+        "name": "1 Saniye Döngü",
         "props": [],
         "repeat": "1",
         "crontab": "",
         "once": true,
-        "onceDelay": 0.1,
+        "onceDelay": 0.5,
         "topic": "",
-        "x": 170,
-        "y": 200,
-        "wires": [
-            [
-                "get_sensors"
-            ]
-        ]
+        "x": 140,
+        "y": 160,
+        "wires": [["get_sensors"]]
     },
     {
         "id": "get_sensors",
         "type": "http request",
-        "z": "bbbeb38bf0287061",
-        "name": "Python API Oku",
+        "z": "tab_main",
+        "name": "GET /api/sensors",
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
@@ -34,38 +37,45 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 380,
-        "y": 200,
-        "wires": [
-            [
-                "autonomous_logic"
-            ]
-        ]
+        "x": 340,
+        "y": 160,
+        "wires": [["autonomous_logic"]]
     },
     {
         "id": "autonomous_logic",
         "type": "function",
-        "z": "bbbeb38bf0287061",
-        "name": "Otonom İklim Zekası",
-        "func": "let env = msg.payload;\nlet commands = [];\n\n// Kural 1: Kabin Nemi %60'ı geçerse Nem Toplayıcıyı (Dehumidifier) aç\nif (env.chamber_humidity > 60.0) {\n    commands.push({ payload: { \"device\": \"dehumidifier\", \"action\": true } });\n} else if (env.chamber_humidity < 50.0) {\n    commands.push({ payload: { \"device\": \"dehumidifier\", \"action\": false } });\n}\n\n// Kural 2: Sıcaklık artarsa Fanı aç\nif (env.chamber_temperature > 24.5) {\n    commands.push({ payload: { \"device\": \"ventilation_fan\", \"action\": true } });\n} else if (env.chamber_temperature < 23.5) {\n    commands.push({ payload: { \"device\": \"ventilation_fan\", \"action\": false } });\n}\n\nreturn [commands];",
+        "z": "tab_main",
+        "name": "Otonom İklim ve Besin Zekası",
+        "func": "// KOTA Autonomous Control Logic\n// Reads full sensor state from Python physics engine\n// Issues corrective device commands for all 5 controlled devices\n\nconst env = msg.payload;\nconst commands = [];\n\n// ---- KURAL 1: NEM YÖNETİMİ ----\n// Kabin nemi %62 üzerine çıkarsa Dehumidifier'ı aç\n// Atmosferik su hasadı: havayı kurutur ve suyu tanka geri gönderir\nif (env.chamber_humidity > 62.0) {\n    commands.push({ payload: { device: 'dehumidifier', action: true } });\n} else if (env.chamber_humidity < 50.0) {\n    commands.push({ payload: { device: 'dehumidifier', action: false } });\n}\n\n// ---- KURAL 2: SICAKLIK YÖNETİMİ ----\n// Sıcaklık ISS eşiğini geçerse havalandırma fanını aç\n// Fan: ISS ortam sıcaklığıyla karışım sağlar\nif (env.chamber_temperature > 24.5) {\n    commands.push({ payload: { device: 'ventilation_fan', action: true } });\n} else if (env.chamber_temperature < 23.5) {\n    commands.push({ payload: { device: 'ventilation_fan', action: false } });\n}\n\n// ---- KURAL 3: pH KONTROLܒ ----\n// pH 6.5 üzerine çıkarsa asit pompasını aç (bitkiler pH 5.5-6.5 arasını tercih eder)\n// Python motoru da pH'yı kontrol eder ama Node-RED ikinci güvenlik katmanıdır\nif (env.ph > 6.5) {\n    commands.push({ payload: { device: 'ph_doser', action: true } });\n} else if (env.ph < 5.8) {\n    commands.push({ payload: { device: 'ph_doser', action: false } });\n}\n\n// ---- KURAL 4: NPK BESIN KONTROLÜ ----\n// Herhangi bir mineral 40 ppm altına düşerse gübre dozlayıcıyı aç\n// Bu Node-RED katmanı Python motorundaki auto-restock ile paralel çalışır\nconst minNPK = Math.min(env.mineral_n, env.mineral_p, env.mineral_k);\nif (minNPK < 40.0) {\n    commands.push({ payload: { device: 'npk_doser', action: true } });\n} else if (minNPK > 90.0) {\n    commands.push({ payload: { device: 'npk_doser', action: false } });\n}\n\n// ---- KURAL 5: ACİL SU YÖNETİMİ ----\n// Su tankı 4L altına düşerse dehumidifier'ı zorla aç\n// Python motoru da bunu yapar; bu çift güvenlik katmanıdır\nif (env.water_tank_liters < 4.0) {\n    commands.push({ payload: { device: 'dehumidifier', action: true } });\n    node.warn('ACİL: Su tankı kritik seviyede! Dehumidifier zorla açıldı.');\n}\n\n// Her komutu ayrı mesaj olarak döndür (post_command her birini ayrı POST atar)\nif (commands.length === 0) {\n    return null; // nothing to do this tick\n}\nreturn [commands];",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 610,
-        "y": 200,
-        "wires": [
-            [
-                "post_command"
-            ]
-        ]
+        "x": 580,
+        "y": 160,
+        "wires": [["split_commands"]]
+    },
+    {
+        "id": "split_commands",
+        "type": "split",
+        "z": "tab_main",
+        "name": "Komutları Böl",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 790,
+        "y": 160,
+        "wires": [["post_command"]]
     },
     {
         "id": "post_command",
         "type": "http request",
-        "z": "bbbeb38bf0287061",
-        "name": "Cihazları Tetikle",
+        "z": "tab_main",
+        "name": "POST /api/device",
         "method": "POST",
         "ret": "txt",
         "paytoqs": "ignore",
@@ -76,20 +86,62 @@
         "insecureHTTPParser": false,
         "authType": "",
         "senderr": false,
-        "headers": [],
-        "x": 860,
-        "y": 200,
-        "wires": [
-            []
-        ]
+        "headers": [
+            { "keyType": "str", "keyValue": "Content-Type", "valueType": "str", "valueValue": "application/json" }
+        ],
+        "x": 1000,
+        "y": 160,
+        "wires": [[]]
     },
-
-    [
-    {"id":"ws_config","type":"websocket-listener","path":"/uzay-verisi","wholemsg":"false"},
-    {"id":"addon_logic","type":"function","name":"pH & EC Simüle Et + Karar","func":"// Eski sıcaklık verisini alıyoruz (Yoksa 23 varsayıyoruz)\nlet temp = msg.payload.Temp_degC_ISS || 23.0;\n\n// 3 bitki için ortak yaşam (Sweet Spot) pH ve EC simülasyonu\nlet current_pH = (5.8 + (Math.random() * 0.4 - 0.2)).toFixed(2);\nlet current_EC = (1.5 + (Math.random() * 0.3 - 0.15)).toFixed(2);\n\nlet status = \"✅ OPTİMAL: 3'lü Ekosistem Stabil\";\nlet color = \"#00ff00\";\n\nif (current_EC < 1.4) {\n    status = \"⚠️ MİNERAL DÜŞÜK: EC Pompası Devrede\";\n    color = \"#ffaa00\";\n} else if (current_pH > 6.0) {\n    status = \"⚠️ pH YÜKSEK: Asit Dozajı Yapılıyor\";\n    color = \"#ff0000\";\n} else if (temp > 23.4) {\n    status = \"⚠️ SICAKLIK KRİTİK: Fanlar Açık\";\n    color = \"#ff0000\";\n}\n\n// Tüm verileri tek bir pakette birleştir (Web sitesi için)\nmsg.payload.pH_Level = Number(current_pH);\nmsg.payload.EC_Level = Number(current_EC);\nmsg.payload.SystemStatus = status;\nmsg.color = color;\n\n// 1. Çıkış: WebSocket (Tüm veriler)\n// 2. Çıkış: pH Göstergesi\n// 3. Çıkış: EC Göstergesi\n// 4. Çıkış: Durum Metni\nreturn [\n    msg, \n    {payload: msg.payload.pH_Level}, \n    {payload: msg.payload.EC_Level}, \n    {payload: status, color: color}\n];","outputs":4,"noerr":0,"initialize":"","finalize":"","libs":[],"x":400,"y":400,"wires":[["ws_out"],["gauge_ph"],["gauge_ec"],["text_status"]]},
-    {"id":"ws_out","type":"websocket out","name":"Web Sitesine Gönder","server":"ws_config","client":"","x":700,"y":300,"wires":[]},
-    {"id":"gauge_ph","type":"ui_gauge","name":"pH Seviyesi","group":"group1","order":5,"width":0,"height":0,"gtype":"gage","title":"🧪 pH Seviyesi","label":"pH","format":"{{value}}","min":"4","max":"8","colors":["#ff0000","#00ff00","#ff0000"],"seg1":"5.5","seg2":"6.2","x":670,"y":360,"wires":[]},
-    {"id":"gauge_ec","type":"ui_gauge","name":"Mineral (EC)","group":"group1","order":6,"width":0,"height":0,"gtype":"gage","title":"⚡ Mineral (EC)","label":"mS/cm","format":"{{value}}","min":"0","max":"3","colors":["#ffaa00","#00ff00","#ff0000"],"seg1":"1.2","seg2":"2.0","x":670,"y":420,"wires":[]},
-    {"id":"text_status","type":"ui_text","name":"Durum Panosu","group":"group1","order":7,"width":0,"height":0,"format":"<div style='color:{{msg.color}}; font-weight:bold; font-size:1.2em;'>{{msg.payload}}</div>","label":"Sistem Durumu:","x":680,"y":480,"wires":[]}
-]
+    {
+        "id": "debug_log",
+        "type": "debug",
+        "z": "tab_main",
+        "name": "Sensör Logu",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusType": "auto",
+        "x": 580,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "get_sensors_debug",
+        "type": "http request",
+        "z": "tab_main",
+        "name": "GET /api/sensors (Debug)",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:8000/api/sensors",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 360,
+        "y": 260,
+        "wires": [["debug_log"]]
+    },
+    {
+        "id": "trigger_debug",
+        "type": "inject",
+        "z": "tab_main",
+        "name": "5 Saniye Debug",
+        "props": [],
+        "repeat": "5",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0,
+        "topic": "",
+        "x": 140,
+        "y": 260,
+        "wires": [["get_sensors_debug"]]
+    }
 ]
