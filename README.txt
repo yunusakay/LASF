@@ -13,9 +13,6 @@ Kapalı Ortam İklimlendirmesi: ISS ortamındaki tehlikeli nem (%66 üzeri) ve s
 
 Besin (Mineral) Yönetimi: Kısıtlı kaynaklarla hangi bitkinin ne zaman ekileceğinin bilinmemesi.
 
-EKOSISTEM
-Patates, marul, cilek.
-=======
 ⚙️ GELİŞTİRİLEN TEKNOLOJİLER (Yeni Planlar)
 "Belki" aşamasında olan fikirlerimiz, sistemin ana omurgası olarak hayata geçirilmiştir:
 
