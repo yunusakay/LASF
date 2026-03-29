@@ -20,4 +20,4 @@ NEDEN UZAY TARIMCILIK?
 Uzay da bizim için çoğunlukla her zaman araştıramadığımız bir araştırma ortamı. Dolayısıyla bu fazla mesaide yiyecek üretmek ve onlarla ruh sağlığına dikkat etmek iyi bir şey.
 
 EKOSISTEM
-Patates, marul, cilek.
+Patates, marul, cilek. Karpuz Kavun
