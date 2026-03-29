@@ -13,7 +13,6 @@ Kapalı Ortam İklimlendirmesi: ISS ortamındaki tehlikeli nem (%66 üzeri) ve s
 
 Besin (Mineral) Yönetimi: Kısıtlı kaynaklarla hangi bitkinin ne zaman ekileceğinin bilinmemesi.
 
-<<<<<<< HEAD
 EKOSISTEM
 Patates, marul, cilek.
 =======
@@ -48,4 +47,3 @@ Marul (Lettuce): Yüksek Azot (N) tüketici. Hızlı yetişen yapraklı yeşilli
 Patates (Potato): Yüksek Potasyum (K) tüketici. Temel karbonhidrat ve yüksek kalori (yumru) kaynağı.
 
 Not: Bu proje, NASA VEG-01C (Zinnia) görevine ait gerçek ISS telemetri veri setleri (Sıcaklık ve Nem) referans alınarak kalibre edilmiştir.
->>>>>>> 21c5e64fd28ff103ec803a6910a03f8ef8f0c804
