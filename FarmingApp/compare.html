@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LASF | Digital Twin Validation</title>
+    <title>LASF | Dijital İkiz Doğrulama</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -11,44 +11,49 @@
     <div class="container">
         <header>
             <div>
-                <h1>VEG-01C Digital Twin Validation</h1>
-                <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Comparing Raw Simulation (Plant + 2 Astronauts) vs. Actual ISS Telemetry</p>
+                <h1>VEG-01C Dijital İkiz Doğrulaması</h1>
+                <p style="color:#94a3b8; font-size:13px; margin-top:4px;">
+                    Ham Simülasyon (Bitki + 2 Astronot) ile Gerçek ISS Telemetrisi Karşılaştırması
+                </p>
             </div>
-            <div id="connection-status" class="status-offline">Offline</div>
+            <div id="connection-status" class="status-offline">Çevrimdışı</div>
         </header>
 
         <div class="kpi-grid">
-            <div class="card" style="border-color: #38bdf8;">
-                <h3>NASA ISS Raw Temp</h3>
-                <p id="val-nasa-temp" style="color: #38bdf8;">-- °C</p>
+            <div class="card" style="border-color:#38bdf8;">
+                <h3>NASA ISS Gerçek Sıcaklık</h3>
+                <p id="val-nasa-temp" style="color:#38bdf8;">-- °C</p>
             </div>
-            <div class="card" style="border-color: #f87171;">
-                <h3>Simulated Temp</h3>
-                <p id="val-sim-temp" style="color: #f87171;">-- °C</p>
+            <div class="card" style="border-color:#f87171;">
+                <h3>Simüle Sıcaklık</h3>
+                <p id="val-sim-temp" style="color:#f87171;">-- °C</p>
             </div>
-            <div class="card" style="border-color: #4ade80;">
-                <h3>NASA ISS Raw Hum</h3>
-                <p id="val-nasa-hum" style="color: #4ade80;">-- %</p>
+            <div class="card" style="border-color:#4ade80;">
+                <h3>NASA ISS Gerçek Nem</h3>
+                <p id="val-nasa-hum" style="color:#4ade80;">-- %</p>
             </div>
-            <div class="card" style="border-color: #fbbf24;">
-                <h3>Simulated Hum</h3>
-                <p id="val-sim-hum" style="color: #fbbf24;">-- %</p>
+            <div class="card" style="border-color:#fbbf24;">
+                <h3>Simüle Nem</h3>
+                <p id="val-sim-hum" style="color:#fbbf24;">-- %</p>
             </div>
         </div>
 
-        <div class="main-grid" style="flex-direction: column;">
-            <div class="chart-box" style="height: 300px; margin-bottom: 16px;">
-                <div class="chart-title">Temperature Delta Validation (°C)</div>
+        <div class="main-grid" style="flex-direction:column;">
+            <div class="chart-box" style="height:300px; margin-bottom:16px;">
+                <div class="chart-title">Sıcaklık Farkı Doğrulaması (°C)</div>
                 <canvas id="tempCompareChart"></canvas>
             </div>
-            <div class="chart-box" style="height: 300px;">
-                <div class="chart-title">Humidity Delta Validation (%)</div>
+            <div class="chart-box" style="height:300px;">
+                <div class="chart-title">Nem Farkı Doğrulaması (%)</div>
                 <canvas id="humCompareChart"></canvas>
             </div>
         </div>
-        
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="index.html" style="color: #94a3b8; text-decoration: none; border: 1px solid #334155; padding: 8px 16px; border-radius: 4px;">⬅ Return to Main LASF Dashboard</a>
+
+        <div style="text-align:center; margin-top:20px;">
+            <a href="index.html"
+               style="color:#94a3b8; text-decoration:none; border:1px solid #334155; padding:8px 16px; border-radius:4px;">
+                ← Ana LASF Paneline Dön
+            </a>
         </div>
     </div>
     <script src="compare.js"></script>

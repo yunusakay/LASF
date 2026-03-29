@@ -148,7 +148,7 @@
             </div>
 
             <div class="crop-slot">
-                <div class="crop-icon" id="crop-icon-3">🌱</div>
+               <div class="crop-icon" id="crop-icon-3">🫘</div>
                 <select id="crop-select-3" class="crop-dropdown" onchange="updateCropIcon(3)">
                     <option value="marul">Marul</option>
                     <option value="patates">Patates</option>
@@ -186,7 +186,7 @@
                     <button onclick="toggleDevice('ventilation_fan', true)" class="btn-danger">
                         💨 Fanı Aç (Soğut)
                     </button>
-                    <!-- <button onclick="toggleDevice('npk_doser', true)" class="btn-npk">🧪 NPK Gübre Sık</button> -->
+                    <button onclick="toggleDevice('npk_doser', true)" class="btn-npk">🧪 NPK Gübre Sık</button> 
                     <button onclick="releaseToAuto()" class="btn-auto">
                         🤖 Sistemi Otonoma Bırak
                     </button>
@@ -225,6 +225,10 @@
                 </div>
                 <div class="stat-row">
                     <span>🔄 Tamamlanan Stres Döngüsü</span><strong id="val-stress-cycles"
+                    <div class="stat-row">
+    <span>💧 Su Verimliliği</span>
+    <strong id="val-efficiency" style="color: #4ade80">--%</strong>
+</div>
                         style="color: #a78bfa">--</strong>
                 </div>
                 <div class="stat-row">
