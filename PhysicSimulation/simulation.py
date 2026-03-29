@@ -15,16 +15,23 @@ from pydantic import BaseModel
 import uvicorn
 
 # ---------------------------------------------------------------------------
-# SIMULATION CONSTANTS
+# SIMULATION CONSTANTS & HUMAN IMPACT
 # ---------------------------------------------------------------------------
+
+# VEG-01C Mission had 2 astronauts affecting the environment
+HUMANS_IN_CABIN = 2
+HUMAN_TEMP_RISE_PER_TICK = 0.03 * HUMANS_IN_CABIN  # Body heat radiation
+HUMAN_HUM_RISE_PER_TICK = 0.08 * HUMANS_IN_CABIN   # Respiration & sweat
 
 NPK_CONSUME_N, NPK_CONSUME_P, NPK_CONSUME_K = 0.15, 0.05, 0.12
 NPK_RESTOCK_LOW, NPK_RESTOCK_HIGH           = 40.0, 90.0
-NPK_DOSE_N, NPK_DOSE_P, NPK_DOSE_K         = 5.0, 2.0, 4.0
+NPK_DOSE_N, NPK_DOSE_P, NPK_DOSE_K          = 5.0, 2.0, 4.0
+
+NPK_MIN, NPK_MAX                            = 0.0, 250.0  # Safe mineral boundaries
 
 PH_DRIFT_PER_TICK                          = 0.02
 PH_DOSE_PER_TICK                           = 0.10
-PH_HIGH_THRESHOLD, PH_LOW_THRESHOLD       = 6.5, 5.8
+PH_HIGH_THRESHOLD, PH_LOW_THRESHOLD        = 6.5, 5.8
 PH_MIN, PH_MAX                             = 4.0, 8.0
 
 WATER_CONSUME_NORMAL                       = 0.05
@@ -37,12 +44,10 @@ WATER_EMERGENCY_BELOW                      = 4.0
 TEMP_RISE_PER_TICK                         = 0.05
 TEMP_FAN_BLEND_RATE                        = 0.4
 
-HUM_RISE_NORMAL, HUM_RISE_STRESS          = 0.5, 0.2
+HUM_RISE_NORMAL, HUM_RISE_STRESS           = 0.5, 0.2
 
 LIGHT_STRESS_DURATION                      = 120
 OSMOTIC_STRESS_DURATION                    = 180
-EC_OSMOTIC_STEP, EC_OSMOTIC_MAX           = 0.05, 3.0
-EC_RECOVERY_STEP, EC_RECOVERY_TARGET      = 0.10, 1.8
 
 # ---------------------------------------------------------------------------
 # NASA DATASET
@@ -61,7 +66,7 @@ try:
             except: pass
             try:    last_hum = float(row["RH_percent_ISS"])
             except: pass
-            dataset.append({"time": row["Controller_Time_GMT"], "iss_temp": last_temp, "iss_hum": last_hum})
+            dataset.append({"time": row.get("Controller_Time_GMT", "00:00"), "iss_temp": last_temp, "iss_hum": last_hum})
     print(f"[OK] {len(dataset)} NASA rows loaded.")
 except FileNotFoundError:
     print("[WARN] Dataset not found — using fallback sine-wave data.")
@@ -118,23 +123,14 @@ _npk_manual_override = False
 _ph_manual_override  = False
 
 # ---------------------------------------------------------------------------
-# HELPERS
+# HELPERS & AUTONOMOUS CONTROLLERS
 # ---------------------------------------------------------------------------
-
-def _vpd(temp: float, hum: float) -> float:
-    svp = 0.61078 * math.exp((17.27 * temp) / (temp + 237.3))
-    return round(svp - svp * (hum / 100.0), 3)
 
 def _clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
-# ---------------------------------------------------------------------------
-# AUTONOMOUS CONTROLLERS
-# ---------------------------------------------------------------------------
-
 def _ctrl_npk() -> None:
-    if _npk_manual_override:
-        return
+    if _npk_manual_override: return
     n, p, k = state["mineral_n"], state["mineral_p"], state["mineral_k"]
     if (n < NPK_RESTOCK_LOW or p < NPK_RESTOCK_LOW or k < NPK_RESTOCK_LOW) and not devices["npk_doser"]:
         devices["npk_doser"] = True
@@ -143,8 +139,7 @@ def _ctrl_npk() -> None:
         devices["npk_doser"] = False
 
 def _ctrl_ph() -> None:
-    if _ph_manual_override:
-        return
+    if _ph_manual_override: return
     ph = state["ph"]
     if ph > PH_HIGH_THRESHOLD and not devices["ph_doser"]:
         devices["ph_doser"] = True
@@ -158,11 +153,15 @@ def _ctrl_water() -> None:
         state["alerts"].append(f"ALARM: Su tankı kritik ({state['water_tank_liters']:.1f}L) — dehumidifier zorla açıldı!")
 
 # ---------------------------------------------------------------------------
-# STRESS STATE MACHINE
+# STRESS STATE MACHINE & AI
 # ---------------------------------------------------------------------------
 
 def _stress(crop: str, temp: float, hum: float) -> None:
-    state["vpd_kpa"] = _vpd(temp, hum)
+    # 1. Calculate Vapor Pressure Deficit (VPD)
+    svp = 0.61078 * math.exp((17.27 * temp) / (temp + 237.3))
+    avp = svp * (hum / 100.0)
+    state["vpd_kpa"] = round(svp - avp, 3)
+
     phase = state["stress_phase"]
 
     if phase == "NORMAL":
@@ -181,26 +180,21 @@ def _stress(crop: str, temp: float, hum: float) -> None:
 
     elif phase == "OSMOTIC_STRESS":
         devices["ec_doser"] = True
-        state["ec"]                    += EC_OSMOTIC_STEP
+        state["ec"]                    += 0.05
         state["stress_duration_ticks"] += 1
-        if state["ec"] >= EC_OSMOTIC_MAX or state["stress_duration_ticks"] >= OSMOTIC_STRESS_DURATION:
+        if state["ec"] >= 3.0 or state["stress_duration_ticks"] >= OSMOTIC_STRESS_DURATION:
             devices["ec_doser"]    = False
             state["stress_phase"]  = "RECOVERY"
 
     elif phase == "RECOVERY":
         state["light_ppfd"]       = 400.0
         state["blue_light_ratio"] = 20.0
-        if state["ec"] > EC_RECOVERY_TARGET:
-            state["ec"]                  -= EC_RECOVERY_STEP
+        if state["ec"] > 1.8:
+            state["ec"]                  -= 0.1
             state["water_tank_liters"]   += 0.5
-        state["ec"] = max(EC_RECOVERY_TARGET, state["ec"])
-        if state["ec"] <= EC_RECOVERY_TARGET + 0.2:
+        if state["ec"] <= 2.0:
             state["stress_phase"]              = "NORMAL"
             state["stress_cycles_completed"]   += 1
-
-# ---------------------------------------------------------------------------
-# AI CROP RECOMMENDATION
-# ---------------------------------------------------------------------------
 
 def _ai_recommend() -> None:
     n, p, k = state["mineral_n"], state["mineral_p"], state["mineral_k"]
@@ -233,15 +227,9 @@ async def physics_loop() -> None:
         state["alerts"]                = []
 
         # --- SİMBİYOTİK EKOSİSTEM MİNERAL DÖNGÜSÜ ---
-        # Soya azot üretir, marul tüketir, patates potasyum çeker
-        soya_n_katkisi = 0.30     
-        marul_n_tuketimi = 0.35   
-        patates_k_tuketimi = 0.25 
-        genel_p_tuketimi = 0.10   
-
-        state["mineral_n"] = max(0.0, state["mineral_n"] + soya_n_katkisi - marul_n_tuketimi)
-        state["mineral_p"] = max(0.0, state["mineral_p"] - genel_p_tuketimi)
-        state["mineral_k"] = max(0.0, state["mineral_k"] - patates_k_tuketimi)
+        state["mineral_n"] -= NPK_CONSUME_N
+        state["mineral_p"] -= NPK_CONSUME_P
+        state["mineral_k"] -= NPK_CONSUME_K
 
         _ai_recommend()
         _ctrl_npk()
@@ -250,10 +238,14 @@ async def physics_loop() -> None:
         _stress(state["ai_crop"], state["chamber_temperature"], state["chamber_humidity"])
 
         in_stress = state["stress_phase"] in ("LIGHT_STRESS", "OSMOTIC_STRESS")
-        state["chamber_humidity"]  += HUM_RISE_STRESS  if in_stress else HUM_RISE_NORMAL
+        
+        # Human impact is added here!
+        state["chamber_humidity"]  += (HUM_RISE_STRESS if in_stress else HUM_RISE_NORMAL) + HUMAN_HUM_RISE_PER_TICK
+        state["chamber_temperature"] += TEMP_RISE_PER_TICK + HUMAN_TEMP_RISE_PER_TICK
+        
         state["water_tank_liters"] -= WATER_CONSUME_STRESS if in_stress else WATER_CONSUME_NORMAL
-
         state["ph"] += PH_DRIFT_PER_TICK
+        
         if state["water_temp"] < state["chamber_temperature"]:
             state["water_temp"] += 0.05
 
@@ -265,8 +257,6 @@ async def physics_loop() -> None:
 
         if devices["ventilation_fan"]:
             state["chamber_temperature"] += (row["iss_temp"] - state["chamber_temperature"]) * TEMP_FAN_BLEND_RATE
-        else:
-            state["chamber_temperature"] += TEMP_RISE_PER_TICK
 
         if devices["dehumidifier"] and state["chamber_humidity"] > 40.0:
             state["chamber_humidity"]      -= WATER_DEHUMIDIFY_HUM_DROP
@@ -278,20 +268,21 @@ async def physics_loop() -> None:
         if devices["ph_doser"]:
             state["ph"] -= PH_DOSE_PER_TICK
 
-        # Clamp (Sınırlandırmalar)
+        # Clamp (Sınırlandırmalar - NPK MAX eklendi)
+        state["mineral_n"]             = _clamp(state["mineral_n"], NPK_MIN, NPK_MAX)
+        state["mineral_p"]             = _clamp(state["mineral_p"], NPK_MIN, NPK_MAX)
+        state["mineral_k"]             = _clamp(state["mineral_k"], NPK_MIN, NPK_MAX)
         state["ph"]                    = _clamp(state["ph"], PH_MIN, PH_MAX)
         state["chamber_humidity"]      = _clamp(state["chamber_humidity"], 0.0, 100.0)
         state["water_tank_liters"]     = _clamp(state["water_tank_liters"], WATER_TANK_MIN, 100.0)
         state["chamber_temperature"]   = _clamp(state["chamber_temperature"], 15.0, 40.0)
         state["water_temp"]            = _clamp(state["water_temp"], 10.0, 35.0)
         state["ec"]                    = _clamp(state["ec"], 0.5, 4.0)
-        state["water_harvested_total"] = round(state["water_harvested_total"], 2)
 
         print(
             f"[{state['current_time']}] "
             f"N:{state['mineral_n']:.0f} P:{state['mineral_p']:.0f} K:{state['mineral_k']:.0f} | "
-            f"pH:{state['ph']:.2f} EC:{state['ec']:.2f} | "
-            f"H2O:{state['water_tank_liters']:.1f}L | "
+            f"Temp:{state['chamber_temperature']:.1f} Hum:{state['chamber_humidity']:.1f} | "
             f"Crop:{state['ai_crop']} Stress:{state['stress_phase']}"
         )
 
