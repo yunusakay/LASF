@@ -232,10 +232,16 @@ async def physics_loop() -> None:
         state["mission_elapsed_ticks"] += 1
         state["alerts"]                = []
 
-        # Mineral consumption
-        state["mineral_n"] = max(0.0, state["mineral_n"] - NPK_CONSUME_N)
-        state["mineral_p"] = max(0.0, state["mineral_p"] - NPK_CONSUME_P)
-        state["mineral_k"] = max(0.0, state["mineral_k"] - NPK_CONSUME_K)
+        # --- SİMBİYOTİK EKOSİSTEM MİNERAL DÖNGÜSÜ ---
+        # Soya azot üretir, marul tüketir, patates potasyum çeker
+        soya_n_katkisi = 0.30     
+        marul_n_tuketimi = 0.35   
+        patates_k_tuketimi = 0.25 
+        genel_p_tuketimi = 0.10   
+
+        state["mineral_n"] = max(0.0, state["mineral_n"] + soya_n_katkisi - marul_n_tuketimi)
+        state["mineral_p"] = max(0.0, state["mineral_p"] - genel_p_tuketimi)
+        state["mineral_k"] = max(0.0, state["mineral_k"] - patates_k_tuketimi)
 
         _ai_recommend()
         _ctrl_npk()
@@ -272,7 +278,7 @@ async def physics_loop() -> None:
         if devices["ph_doser"]:
             state["ph"] -= PH_DOSE_PER_TICK
 
-        # Clamp
+        # Clamp (Sınırlandırmalar)
         state["ph"]                    = _clamp(state["ph"], PH_MIN, PH_MAX)
         state["chamber_humidity"]      = _clamp(state["chamber_humidity"], 0.0, 100.0)
         state["water_tank_liters"]     = _clamp(state["water_tank_liters"], WATER_TANK_MIN, 100.0)
