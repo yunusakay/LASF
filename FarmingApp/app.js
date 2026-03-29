@@ -37,8 +37,7 @@ async function fetchHydroData() {
         document.getElementById('connection-status').textContent = `Uzay Saati: ${simData.current_time} | Python NPK Motoruna Bağlı`;
         document.getElementById('connection-status').className = "status-online";
 
-<<<<<<< HEAD
-       // HTML içindeki ID'leri güncelliyoruz
+        // HTML içindeki ID'leri güncelliyoruz
         document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
         document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
         document.getElementById('val-water').textContent = simData.water_tank_liters.toFixed(1) + " L"; // Su tankı eklendi!
@@ -49,17 +48,6 @@ async function fetchHydroData() {
         // AI Önerisi ve Zaman
         document.getElementById('ai-status').textContent = simData.ai_recommendation;
         document.getElementById('nasa-time').textContent = simData.current_time;
-=======
-        // HTML içindeki ID'leri güncelliyoruz
-        document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
-        document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
-        
-        // NPK ve AI Eşleştirmesi (Gübre ve Bitki Önerisi)
-        document.getElementById('val-n').textContent = simData.mineral_n.toFixed(0);
-        document.getElementById('val-p').textContent = simData.mineral_p.toFixed(0);
-        document.getElementById('val-k').textContent = simData.mineral_k.toFixed(0);
-        document.getElementById('val-ai').textContent = simData.ai_recommendation;
->>>>>>> ea62cb7b57893d1cf49ede131381d0826683d027
 
         // Grafiği Güncelle
         const now = new Date().toLocaleTimeString();

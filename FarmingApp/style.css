@@ -193,20 +193,6 @@ h1 {
     }
 }
 
-@keyframes blink {
-    0% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
 /* YENİ: Hacker Tarzı Terminal Ekranı */
 .terminal {
     background: rgba(0, 0, 0, 0.6);

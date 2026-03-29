@@ -63,8 +63,8 @@ devices = {
     "ventilation_fan": False, 
     "dehumidifier": False,    
     "chiller": False,         
-    "ph_doser": False
-         
+    "ph_doser": False,
+    "npk_doser": False  # <-- Bu satırı ekledik
 }
 
 async def physics_loop():
