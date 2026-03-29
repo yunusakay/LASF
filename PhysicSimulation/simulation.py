@@ -63,7 +63,8 @@ devices = {
     "ventilation_fan": False, 
     "dehumidifier": False,    
     "chiller": False,         
-    "ph_doser": False         
+    "ph_doser": False
+         
 }
 
 async def physics_loop():
@@ -100,6 +101,11 @@ async def physics_loop():
             state["water_temp"] += 0.05
 
         # CİHAZLARIN ETKİSİ
+        if devices["npk_doser"]:
+            state["mineral_n"] += 5.0
+            state["mineral_p"] += 2.0
+            state["mineral_k"] += 4.0
+
         if devices["ventilation_fan"]: 
             state["chamber_temperature"] += (iss_temp - state["chamber_temperature"]) * 0.4
         else:

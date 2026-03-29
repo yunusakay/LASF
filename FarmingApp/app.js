@@ -38,16 +38,17 @@ async function fetchHydroData() {
         document.getElementById('connection-status').textContent = `Uzay Saati: ${simData.current_time} | Python NPK Motoruna Bağlı`;
         document.getElementById('connection-status').className = "status-online";
 
-        // HTML içindeki DOĞRU ID'leri güncelliyoruz
+       // HTML içindeki ID'leri güncelliyoruz
         document.getElementById('val-temp').textContent = simData.chamber_temperature.toFixed(1) + " °C";
         document.getElementById('val-hum').textContent = simData.chamber_humidity.toFixed(1) + " %";
-        document.getElementById('val-water').textContent = simData.water_tank_liters.toFixed(1) + " L";
+        document.getElementById('val-water').textContent = simData.water_tank_liters.toFixed(1) + " L"; // Su tankı eklendi!
         
-        // NPK Değerlerini TEK BİR ID'de birleştirip basıyoruz
-        document.getElementById('val-npk').textContent = `N:${simData.mineral_n.toFixed(0)} P:${simData.mineral_p.toFixed(0)} K:${simData.mineral_k.toFixed(0)}`;
+        // NPK değerlerini tek bir satırda birleştirip val-npk içine yazıyoruz
+        document.getElementById('val-npk').textContent = `N:${simData.mineral_n.toFixed(0)} | P:${simData.mineral_p.toFixed(0)} | K:${simData.mineral_k.toFixed(0)}`;
         
-        // Yapay Zeka ID'si doğru şekilde (ai-status) olarak güncellendi
+        // AI Önerisi ve Zaman
         document.getElementById('ai-status').textContent = simData.ai_recommendation;
+        document.getElementById('nasa-time').textContent = simData.current_time;
 
         // Grafiği Güncelle
         const now = new Date().toLocaleTimeString();
