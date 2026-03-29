@@ -4,8 +4,8 @@ echo ===================================================
 echo 🚀 KOTA - UZAY TARIMI SISTEMI BASLATILIYOR...
 echo ===================================================
 
-echo [0/4] Eski acik sunucular temizleniyor (Port 8000 aciliyor)...
-taskkill /F /IM python.exe /T >nul 2>&1
+echo [0/4] 8000 portu zorla temizleniyor...
+FOR /F "tokens=5" %%T IN ('netstat -a -n -o ^| findstr :8000') DO taskkill /F /PID %%T >nul 2>&1
 
 echo [1/4] Gerekli Python kutuphaneleri kontrol ediliyor...
 pip install fastapi uvicorn pydantic >nul 2>&1
@@ -27,4 +27,3 @@ start FarmingApp\index.html
 echo ===================================================
 echo ✅ TUM SISTEMLER AKTIF! BASARILAR TAKIM!
 echo ===================================================
-pause
