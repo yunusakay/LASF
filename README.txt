@@ -1,3 +1,7 @@
+Yunus AKAY
+Yunus Emre GÜNAY
+Emir Samet YALÇINKAYA
+TÜM HAKLARI SAKLIDIR
 ================================================================================
 Low Atmosphere Satellite Farming (LASF)
 NASA ISS Telemetrisi Destekli Otonom Uzay Tarımı ve Kapalı Döngü Yaşam Destek Sistemi
